@@ -1,38 +1,37 @@
+-- install command: curl https://ollama.ai/install.sh | sh
 
-function os.command(command)
-  local file = assert(io.popen(command, 'r'))
-  local output = assert(file:read('*a'))
-  file:close()
-  return output
+util = require("utility-functions")
+-- util.required_program("wsl") -- This fails on my system.
+util.required_program("pwsh") -- Apparently this is and isn't PowerShell. Isn't the future amazing?
+
+-- On my system, it is impossible to call wsl directly from Lua. No idea why.
+local function wsl_command(command, output_return)
+  local file_name = ".tmp." .. util.uuid()
+  local output
+
+  command = "pwsh -Command wsl --exec \"" .. util.escape_quotes(command) .. "\""
+
+  if output_return then
+    command = command .. " > " .. file_name
+  end
+
+  os.execute(command)
+
+  if output_return then
+    local file = io.open(file_name, "r")
+    local output = file:read("*a")
+    file:close()
+    os.execute("rm " .. file_name) -- TODO replace with version I know works from somewhere else
+    return output
+  end
 end
 
-function string.trim6(s)
-  return s:match'^()%s*$' and '' or s:match'^%s*(.*%S)'
+local function query_dolphin(prompt)
+  local command = "ollama run dolphin-mixtral \"" .. util.escape_quotes(prompt) .. "\""
+  return wsl_command(command, true)
+  -- TODO trim the above
+
+  -- os.execute("pwsh -Command wsl --exec \"ollama run dolphin-mixtral \\\"Say only the word 'cheese'.\\\"\" > test-output-file.txt")
 end
 
-print("---")
-
--- local home = os.command("echo %userprofile%")
--- home = string.trim6(home)
--- print(home)
-
--- local dolphin_cheese = os.command("wsl -- ollama run dolphin-mixtral \"Say only the word 'cheese'.\"")
--- local dolphin_cheese = os.command("wsl")
--- os.execute("C:\\Windows\\System32\\wsl.exe")
--- local dolphin_cheese = os.command("echo %path%")
--- local dolphin_cheese = os.command("where wsl")
--- print(dolphin_cheese)
-
--- print(os.command("bash -c \"$PATH\""))
--- os.execute("bash -c \"ollama help\"")
-
--- runs but doesn't return anything?
--- local dolphin_cheese = os.command("pwsh -Command wsl -- ollama run dolphin-mixtral \"Say only the word 'cheese'.\"")
--- print(dolphin)
-
--- os.execute("pwsh -Command wsl -- ollama run dolphin-mixtral \"Say only the word 'cheese'.\"")
-
--- this will output to file in the correct place :D
-os.execute("pwsh -Command wsl --exec \"ollama run dolphin-mixtral \\\"Say only the word 'cheese'.\\\"\" > test-output-file.txt")
-
-print("---")
+print(query_dolphin("Say only the word 'cheese'."))
