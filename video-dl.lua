@@ -2,7 +2,7 @@
 
 local helptext = [[Usage:
 
-  ./video-dl.lua [action] <url>
+  video-dl.lua [action] <url>
 
 [action]: What is desired.
             video (default): Highest quality video (maximum 720p).
@@ -15,6 +15,10 @@ local helptext = [[Usage:
 <url>:    Source. YouTube URL expected, but should work with anything
             yt-dlp works with.
 ]]
+
+if os.execute("where yt-dlp") ~= 0 then
+  error("yt-dlp must be installed and in the path (accessible to CMD.exe)")
+end
 
 local action, url
 
