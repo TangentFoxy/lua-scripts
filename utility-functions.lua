@@ -3,7 +3,7 @@ math.randomseed(os.time())
 -- TODO look for popen command and fall back to outputting to file if its unavailable
 function os.command(command)
   local file = assert(io.popen(command, 'r'))
-  local output = assert(file:read('*a'))
+  local output = assert(file:read('*all'))
   file:close()
   return output
 end
@@ -30,6 +30,10 @@ utility.uuid = function()
     return ("0123456789abcdef"):sub(r, r)
   end
   return (("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"):gsub("[xy]", fn))
+end
+
+utility.tmp_file_name = function()
+  return ".tmp." .. utility.uuid()
 end
 
 utility.escape_quotes = function(input)
