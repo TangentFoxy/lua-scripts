@@ -17,7 +17,7 @@ local helptext = [[Usage:
 ]]
 
 if os.execute("where yt-dlp") ~= 0 then
-  error("yt-dlp must be installed and in the path (accessible to CMD.exe)")
+  error("yt-dlp must be installed and in the path")
 end
 
 local action, url

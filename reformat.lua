@@ -2,9 +2,10 @@
 
 local helptext = [[Usage:
 
-  reformat.lua title author
+  reformat.lua <title> <author>
 
-PowerShell: Quotes will be turned into a single argument. Backslashes don't escape spaces.
+PowerShell: Quotes will be turned into a single argument. Backslashes don't
+            escape spaces.
 ]]
 
 local title, author
