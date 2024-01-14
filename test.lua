@@ -6,13 +6,12 @@ utility = require("utility-functions")
 
 print("---")
 
--- local ls = utility.ls()
--- ls(function(file_name)
+-- utility.ls()(function(file_name)
 --   print(file_name)
 -- end)
 
-utility.ls()(function(file_name)
-  print(file_name)
-end)
+-- verifying that popen fallback works correctly, with a well-formatted warning
+io.popen = nil
+os.capture("echo hello")
 
 print("---")

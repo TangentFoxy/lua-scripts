@@ -8,14 +8,6 @@ else
   utility.OS = "UNIX-like"
 end
 
--- TODO look for popen command and fall back to outputting to file if its unavailable (this should always output a warning!)
-function os.capture(command)
-  local file = assert(io.popen(command, 'r'))
-  local output = assert(file:read('*all'))
-  file:close()
-  return output
-end
-
 -- always uses outputting to a temporary file to guarantee safety
 function os.capture_safe(command, tmp_file_name)
   local file_name = tmp_file_name or utility.tmp_file_name()
@@ -28,15 +20,33 @@ function os.capture_safe(command, tmp_file_name)
   return output
 end
 
+function os.capture(command)
+  if io.popen then
+    local file = assert(io.popen(command, 'r'))
+    local output = assert(file:read('*all'))
+    file:close()
+    return output
+  else
+    print("WARNING: io.popen not available, using a temporary file to receive output from:\n", command)
+    return os.capture_safe(command)
+  end
+end
+
 -- trim6 from Lua users wiki (best all-round pure Lua performance)
 function string.trim(s)
   return s:match'^()%s*$' and '' or s:match'^%s*(.*%S)'
 end
 
--- TODO: This needs to use which on a non-Windows platform.
--- NOTE: This will sometimes print errors that do not matter. Windows, am I right?
 utility.required_program = function(name)
-  if os.execute("where " .. tostring(name)) ~= 0 then
+  local command
+  if utility.OS == "Windows" then
+    command = "where " -- NOTE: This will sometimes print errors that do not matter. Windows, am I right?
+  else
+    command = "which "
+  end
+
+  -- TODO verify this works on Linux / macOS
+  if os.execute(command .. tostring(name)) ~= 0 then
     error(tostring(name) .. " must be installed and in the path")
   end
 end
@@ -72,9 +82,6 @@ utility.ls = function(path)
 
   local tmp_file_name = utility.tmp_file_name()
   local output = os.capture_safe(command, tmp_file_name)
-  -- local output = os.capture_safe(command)
-  -- output = output:trim() -- verifying that even without trailing newlines, the gmatch below will work
-  -- print(output .. "\n---") -- DEBUG
 
   return function(fn)
     for line in output:gmatch("[^\r\n]+") do
