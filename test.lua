@@ -6,12 +6,7 @@ utility = require("utility-functions")
 
 print("---")
 
--- utility.ls()(function(file_name)
---   print(file_name)
--- end)
-
--- verifying that popen fallback works correctly, with a well-formatted warning
-io.popen = nil
-os.capture("echo hello")
+local threads = tonumber(arg[1]) or (arg[1] and 1)
+print(threads)
 
 print("---")

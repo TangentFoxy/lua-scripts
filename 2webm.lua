@@ -1,24 +1,35 @@
 #!/usr/bin/env luajit
--- any2webm.lua
--- Requires ffmpeg
--- Place in a directory with video files and they will all slowly be converted to webm files.
 
--- OS must be detected to choose list command
-local ls
-if package.config:sub(1,1) == "\\" then
-  ls = "dir /w /b > files.txt"
-else
-  ls = "ls -1 > files.txt"
+local helptext = [[Usage:
+
+  2webm.lua [threads]
+
+Converts everything in the local directory to webm, placed in "./2webm-output".
+
+[threads]: Number of threads ffmpeg will be assigned.
+           If a non-number value, 1 thread will be used.
+]]
+
+if arg[1] and arg[1]:find("help") then
+  print(help)
+  return false
 end
 
-os.execute(ls)
+local error_occurred, utility = pcall(function() return require("utility-functions") end) if not error_occurred then error("This script is installed improperly. Follow instructions at https://github.com/TangentFoxy/.lua-files#installation") end
+utility.required_program("ffpmeg")
 
-os.execute("mkdir any2webm-output")
+local threads = tonumber(arg[1]) or (arg[1] and 1)
 
-for line in io.lines("files.txt") do
-  if line:find("%.") and line ~= "files.txt" and line ~= "any2webm.lua" then
-    os.execute("ffmpeg -threads 1 -i \"" .. line .. "\" -threads 1 \"any2webm-output/" .. line .. ".webm\"")
+local for_files = utility.ls()
+os.execute("mkdir 2webm-output")
+
+for_files(function(file_name)
+  local command
+  if threads then
+    command = "ffmpeg -threads " .. threads .. " -i \"" .. file_name .. "\" -threads " .. threads .. " \"2webm-output/" .. file_name .. ".webm\""
+  else
+    command = "ffmpeg -i \"" .. file_name .. "\" \"2webm-output/" .. file_name .. ".webm\""
   end
-end
 
-os.execute("rm files.txt")
+  os.execute(command)
+end)
