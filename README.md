@@ -2,6 +2,7 @@
 It's like dotfiles, but no, it's just Lua scripts I find useful.
 
 ## Scripts
+- `2webm.lua`: Converts everything in the working directory to .webm files.
 - `popen-command-test.lua`: A badly-named WIP script for working with LLMs through WSL using [ollama](https://github.com/jmorganca/ollama).
 - `print-arguments.lua`: For testing how a Lua script receives arguments. (It can be platform-specific.)
 - `test.lua`: (Dev Test) Used repeatedly while working on these scripts to verify minor details I'm forgetful about.

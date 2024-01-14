@@ -6,8 +6,8 @@ utility = dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility
 
 print("---")
 
-for k,v in pairs(utility) do
-  print(k,v)
-end
+-- local value = os.execute("where ffmpeg")
+-- print(value, type(value))
+utility.required_program("ffmpeg")
 
 print("---")

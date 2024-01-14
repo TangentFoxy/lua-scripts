@@ -40,7 +40,7 @@ end
 utility.required_program = function(name)
   local command
   if utility.OS == "Windows" then
-    command = "where " -- NOTE: This will sometimes print errors that do not matter. Windows, am I right?
+    command = "where " -- NOTE: This will print a path when it works. :\ Windows, am I right?
   else
     command = "which "
   end
