@@ -79,6 +79,9 @@ utility.ls = function(path)
   else
     command = "ls -1"
   end
+  if path then
+    command = command .. "\"" .. path .. "\""
+  end
 
   local tmp_file_name = utility.tmp_file_name()
   local output = os.capture_safe(command, tmp_file_name)

@@ -16,7 +16,7 @@ if arg[1] and arg[1]:find("help") then
   return false
 end
 
-local error_occurred, utility = pcall(function() return require("utility-functions") end) if not error_occurred then error("This script is installed improperly. Follow instructions at https://github.com/TangentFoxy/.lua-files#installation") end
+local error_occurred, utility = pcall(function() return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua") end) if not error_occurred then error("\n\nThis script is installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n") end
 utility.required_program("ffpmeg")
 
 local threads = tonumber(arg[1]) or arg[1] or 1
