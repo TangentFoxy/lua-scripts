@@ -26,6 +26,7 @@ os.execute("mkdir output-files\\md")
 local file
 local current_line_count = 0
 local lines_per_volume_target = 18000 -- no hard limit to avoid cutting in the middle of an episode; this limit led to 330 to 415 pages across 25 volumes
+-- approx. 54.5 lines per page on minimum - will recalculate using 52 lines
 local current_volume = 1
 
 local titles = {}
