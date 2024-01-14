@@ -8,6 +8,8 @@ else
   utility.OS = "UNIX-like"
 end
 
+utility.path = arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") -- related to discussion in https://stackoverflow.com/q/6380820
+
 -- always uses outputting to a temporary file to guarantee safety
 function os.capture_safe(command, tmp_file_name)
   local file_name = tmp_file_name or utility.tmp_file_name()
@@ -80,7 +82,7 @@ utility.ls = function(path)
     command = "ls -1"
   end
   if path then
-    command = command .. "\"" .. path .. "\""
+    command = command .. " \"" .. path .. "\""
   end
 
   local tmp_file_name = utility.tmp_file_name()
