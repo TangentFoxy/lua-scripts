@@ -1,6 +1,6 @@
 #!/usr/bin/env luajit
 
-local helptext = [[Usage:
+local help = [[Usage:
 
   video-dl.lua [action] <url>
 

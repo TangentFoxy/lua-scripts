@@ -1,6 +1,6 @@
 #!/usr/bin/env luajit
 
-local helptext = [[Usage:
+local help = [[Usage:
 
   2webm.lua [threads=1]
 
