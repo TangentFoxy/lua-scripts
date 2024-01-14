@@ -112,7 +112,7 @@ local execute = {
     if query == "" then
       return query_model(model)
     else
-      print(query_model(model, prompt))
+      print(query_model(model, query))
       return true
     end
   end,
@@ -133,9 +133,6 @@ end
 
 -- ollama install command: curl https://ollama.ai/install.sh | sh
 
-local function query_dolphin(prompt)
-  query_model("dolphin-mixtral", prompt)
-end
 -- print(query_dolphin("Say only the word 'cheese'."))
 
 -- TEMPORARY creation, need to make this system able to manage models automatically or semi-automatically
