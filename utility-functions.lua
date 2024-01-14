@@ -64,7 +64,7 @@ utility.uuid = function()
 end
 
 utility.tmp_file_name = function()
-  return ".tmp." .. utility.uuid()
+  return "." .. utility.uuid() .. ".tmp"
 end
 
 utility.escape_quotes = function(input)

@@ -1,5 +1,19 @@
 #!/usr/bin/env luajit
 
+-- local args = {...}
+-- for k,v in pairs(args) do
+--   print(k,v)
+-- end
+-- error("break Beat")
+
+-- local arg = {...} -- for some reason, this is suddenly the only way I can pass arguments from another script
+
+-- for k,v in pairs(arg) do
+--   print(k,v)
+-- end
+-- print("\n\n")
+-- error("tmp break")
+
 local help = [[Usage:
 
   llm.lua <action> [...]
@@ -23,6 +37,8 @@ if arg[1] and arg[1]:find("help") then
 end
 
 local error_occurred, utility = pcall(function() return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua") end) if not error_occurred then error("\n\nThis script is installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n") end
+-- local utility = dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua"
+
 -- util.required_program("wsl") -- This fails on my system, necessitating a special function to run commands in WSL.
 -- I have no idea how to check for ollama being installed through WSL, else that check would be here.
 utility.required_program("pwsh") -- Apparently this is AND isn't PowerShell. Isn't the future amazing?
@@ -109,7 +125,7 @@ local execute = {
     utility.ls(search_path)(function(file_name)
       if model == file_name then
         -- WSL can't comprehend a Windows path and treads it as a local path extension, so we must modify the path
-        search_path = search_path:gsub("\\", "/"):gsub("(%a):", function(capture) return "/mnt/" .. capture:lower() end)
+        search_path = search_path:gsub("\\", "/"):gsub("(%a):", function(capture) return "/mnt/" .. capture:lower() end) -- thanks to https://www.lua.org/pil/20.3.html
         local output = wsl_command("ollama create " .. model .. " --file " .. search_path .. model)
         print(output)
 
