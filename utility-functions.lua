@@ -47,7 +47,7 @@ utility.required_program = function(name)
 
   -- TODO verify this works on Linux / macOS
   if os.execute(command .. tostring(name)) ~= 0 then
-    error(tostring(name) .. " must be installed and in the path")
+    error("\n\n" .. tostring(name) .. " must be installed and in the path\n")
   end
 end
 
