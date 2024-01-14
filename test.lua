@@ -6,7 +6,7 @@ utility = require("utility-functions")
 
 print("---")
 
-local threads = tonumber(arg[1]) or (arg[1] and 1)
-print(threads)
+local threads = tonumber(arg[1]) or arg[1] or 1
+print(threads, type(threads))
 
 print("---")
