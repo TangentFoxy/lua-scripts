@@ -1,9 +1,11 @@
 # .lua-files
 It's like dotfiles, but no, it's just Lua scripts I find useful.
 
-## Most Useful Scripts
-- `popen-command-test`: A badly-named WIP script for working with the doplhin-mixtral AI model through WSL using [ollama](https://github.com/jmorganca/ollama).
-- `video-dl`: A few premade command lines for using `yt-dlp` to download what I want quicker.
+## Scripts
+- `popen-command-test.lua`: A badly-named WIP script for working with LLMs through WSL using [ollama](https://github.com/jmorganca/ollama).
+- `print-arguments.lua`: For testing how a Lua script receives arguments. (It can be platform-specific.)
+- `utility-functions.lua`: (Library) Required for many of these scripts to run.
+- `video-dl.lua`: A few premade command lines for using `yt-dlp` to download what I want quicker.
 
 ## Installation
 1. Put this folder somewhere.
