@@ -87,7 +87,7 @@ utility.ls = function(path)
   local output = os.capture_safe(command, tmp_file_name)
 
   return function(fn)
-    for line in output:gmatch("[^\r\n]+") do
+    for line in output:gmatch("[^\r\n]+") do -- thanks to https://stackoverflow.com/a/32847589
       if line ~= tmp_file_name then -- exclude temporary file name
         fn(line)
       end

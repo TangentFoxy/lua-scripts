@@ -56,6 +56,6 @@ execute.meta = execute.metadata
 if execute[action] then
   execute[action]()
 else
-  print("Invalid <action>")
+  print("Invalid [action]")
   print("Received:", "action", action, "url", url)
 end
