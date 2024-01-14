@@ -47,7 +47,7 @@ end
 -- TODO make this check against existant models and error if you try to query a non-existant model
 local function query_model(model, prompt)
   if prompt then
-    return wsl_command("ollama run " .. model .. " \"" .. utility.escape_quotes(prompt) .. "\"")
+    return wsl_command("ollama run " .. model .. " --nowordwrap \"" .. utility.escape_quotes(prompt) .. "\"")
   else
     return wsl_command("ollama run " .. model, false)
   end
