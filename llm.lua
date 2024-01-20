@@ -1,19 +1,5 @@
 #!/usr/bin/env luajit
 
--- local args = {...}
--- for k,v in pairs(args) do
---   print(k,v)
--- end
--- error("break Beat")
-
--- local arg = {...} -- for some reason, this is suddenly the only way I can pass arguments from another script
-
--- for k,v in pairs(arg) do
---   print(k,v)
--- end
--- print("\n\n")
--- error("tmp break")
-
 local help = [[Usage:
 
   llm.lua <action> [...]
@@ -164,7 +150,7 @@ local execute = {
       model = "dolphin-mixtral"
     end
 
-    -- enter interactive mode or send prompt?
+    -- interactive mode or send prompt?
     if query == "" then
       return query_model(model)
     else
@@ -182,13 +168,5 @@ if execute[action] then
   execute[action]()
 else
   print("Invalid <action>")
-  print("Received:", "action", action)
+  print("Arguments received: ", unpack(arg))
 end
-
-
-
--- ollama install command: curl https://ollama.ai/install.sh | sh
-
--- print(query_dolphin("Say only the word 'cheese'."))
-
--- print(query_model("curt", "How are you?"))
