@@ -2,7 +2,7 @@
 
 local help = [[Usage:
 
-  video-dl.lua [action] <url>
+  video-dl.lua [action] [--file] <url>
 
 [action]: What is desired.
             video (default): Highest quality video (maximum 720p).
@@ -12,6 +12,8 @@ local help = [[Usage:
             music, audio: Highest quality audio only.
             metadata, meta: English subtitles (including automatic
               subtitles), thumbnail, description.
+[--file]: <url> is actually a file of URLs to open and execute [action]
+            on each.
 <url>:    Source. YouTube URL expected, but should work with anything
             yt-dlp works with.
 ]]
@@ -32,19 +34,20 @@ if #arg < 2 then
 else
   action = arg[1]
   url = arg[2]
+  -- "--file" is handled just before execution
 end
 
 local execute = {
-  backup = function()
+  backup = function(url)
     os.execute("yt-dlp --retries 100 --write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description -f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" \"" .. url .."\"")
   end,
-  music = function()
+  music = function(url)
     os.execute("yt-dlp --retries 100 -x --audio-quality 0 \"" .. url .."\"")
   end,
-  metadata = function()
+  metadata = function(url)
     os.execute("yt-dlp --retries 100 --write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description --skip-download \"" .. url .."\"")
   end,
-  video = function()
+  video = function(url)
     os.execute("yt-dlp --retries 100 -f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" \"" .. url .. "\"")
   end,
 }
@@ -54,8 +57,17 @@ execute.audio = execute.music
 execute.meta = execute.metadata
 
 if execute[action] then
-  execute[action]()
+  if url == "--file" then
+    pcall(function()
+      for line in io.lines(arg[3]) do
+        execute[action](line)
+      end
+    end)
+  else
+    execute[action](url)
+  end
 else
   print("Invalid [action]")
   print("Received:", "action", action, "url", url)
+  return false
 end
