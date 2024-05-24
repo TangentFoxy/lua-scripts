@@ -86,9 +86,8 @@ for subpath in pairs(subpaths) do
     for global_path, size in pairs(sizes) do
       table.insert(output_text, global_path .. ": " .. size .. " bytes")
     end
-    print(subpath .. " has different sizes!\n" .. table.concat(output_text,"\n") .. "\n")
+    print(subpath .. " has different sizes!\n" .. table.concat(output_text,"\n")) -- the extra \n at the end is kept intentionally
   elseif paths_checked < 2 then
-    -- print(subpath .. " is unique!\n" .. next(sizes) .. "\n")
-    print(next(sizes) .. " is unique!\n")
+    print("UNIQUE: " .. next(sizes))
   end
 end
