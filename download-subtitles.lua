@@ -1,5 +1,8 @@
 #!/usr/bin/env luajit
 
+-- requires chromium installed and usable
+-- expects a single argument, a playlist to download subtitles from (channel URLs work as playlists)
+
 local source = arg[1]
 assert(source and #source > 0, "Specify a URL!")
 
