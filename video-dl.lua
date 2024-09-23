@@ -16,6 +16,8 @@ local help = [[Usage:
             on each.
 <url>:    Source. YouTube URL expected, but should work with anything
             yt-dlp works with.
+
+IMPORTANT: Expects Firefox to be installed with a YouTube account logged in to get cookies from.
 ]]
 
 if os.execute("where yt-dlp") ~= 0 then
@@ -39,16 +41,16 @@ end
 
 local execute = {
   backup = function(url)
-    os.execute("yt-dlp --retries 100 --write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description -f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" \"" .. url .."\"")
+    os.execute("yt-dlp --retries 100 --write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description -f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" \"" .. url .."\" --cookies-from-browser \"firefox\"")
   end,
   music = function(url)
-    os.execute("yt-dlp --retries 100 -x --audio-quality 0 \"" .. url .."\"")
+    os.execute("yt-dlp --retries 100 -x --audio-quality 0 \"" .. url .."\" --cookies-from-browser \"firefox\"")
   end,
   metadata = function(url)
-    os.execute("yt-dlp --retries 100 --write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description --skip-download \"" .. url .."\"")
+    os.execute("yt-dlp --retries 100 --write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description --skip-download \"" .. url .."\" --cookies-from-browser \"firefox\"")
   end,
   video = function(url)
-    os.execute("yt-dlp --retries 100 -f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" \"" .. url .. "\"")
+    os.execute("yt-dlp --retries 100 -f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" \"" .. url .. "\" --cookies-from-browser \"firefox\"")
   end,
 }
 execute.clone = execute.backup
