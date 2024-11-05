@@ -86,7 +86,7 @@ local function format_metadata(config)
   local function stringify_list(list)
     local output = "\"" .. utility.escape_quotes(list[1]) .. "\""
     for i = 2, #list do
-      output = output .. ", \"" .. utility.escape_quotes(list[1]) .. "\""
+      output = output .. ", \"" .. utility.escape_quotes(list[i]) .. "\""
     end
     return output
   end
