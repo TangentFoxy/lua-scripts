@@ -19,24 +19,41 @@ Requirements:
 - Lua libraries: htmlparser, dkjson (or compatible)
 - Binaries:      pandoc, curl
 
-Configuration example:
+Configuration example(s):
   {
-    "author": "Name",
+    "authors": ["Name"], -- "author" with a single string also supported
     "title": "Book",
-    "keywords": ["fantasy", "dragon", "isekai"],
+    "keywords": ["erotica", "fantasy"],
     "base_url": "https://www.literotica.com/s/title-ch-", -- not required if only one section
-    "first_section_url": "https://www.literotica.com/s/title",
+    "first_section_url": "https://www.literotica.com/s/title",  -- only if first section is differently-formatted
     "sections": {
       "start": 1,
-      "finish": 5,
-      "naming": "Chapter" -- not required, but will screw up the Table of Contents if absent
+      "finish": 4,
+      "naming": "Chapter" -- only required for a Table of Contents (unless using anthology form below)
     },
-    "page_counts": [1, 5, 3]
+    "page_counts": [1, 5, 3, 3]
   }
+
+  {
+    "authors": ["Name"], -- first author will be used as the book's primary author
+    "title": "Anthology",
+    "keywords": ["erotica", "fantasy"],
+    "sections": [
+      "https://www.literotica.com/s/unique-title",
+      "https://www.literotica.com/s/another-title"
+    ],
+    "section_titles": [
+      "Unique Title",
+      "Another Title"
+    ],
+    "page_counts": [5, 2]
+  }
+
+  For an explanation of these examples, see the .lua-files ReadMe.
 ]]
 
 local success, utility = pcall(function()
-  return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua")
+  return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
 end)
 if not success then
   print("\n\n" .. tostring(utility))
@@ -45,6 +62,7 @@ end
 
 local json = utility.require("json")
 
+-- TODO utility.path_separator should be a thing
 local path_separator
 if utility.OS == "Windows" then
   path_separator = "\\"
@@ -55,6 +73,7 @@ end
 -- also checks for errors
 -- TODO make it check for required elements and error if any are missing!
 local function get_config()
+  -- TODO arg checking REALLY should not be here
   if not arg[1] then
     print(help)
     error("\nA config file name/path must be specified.")
@@ -67,6 +86,14 @@ local function get_config()
   config = json.decode(file:read("*a"))
   file:close()
 
+  if not config.authors then
+    config.authors = {} -- at least have an empty table so it doesn't error below
+  end
+
+  if type(config.author) then -- old style single author will be added to authors list
+    table.insert(config.authors, config.author)
+  end
+
   -- detecting manually specified sections and flagging it to the rest of the script
   if config.sections[1] then
     config.sections.start = 1
@@ -77,6 +104,10 @@ local function get_config()
 
   if #config.page_counts ~= config.sections.finish - config.sections.start + 1 then
     error("Number of page_counts does not match number of sections.")
+  end
+
+  if config.section_titles and #config.section_titles ~= config.sections.finish - config.sections.start + 1 then
+    error("Number of section_titles does not match number of sections.")
   end
 
   return config
@@ -95,8 +126,7 @@ local function format_metadata(config)
   local metadata = {
     "---",
     "title: \"" .. utility.escape_quotes(config.title) .. "\"",
-    "author:",
-    "- \"" .. utility.escape_quotes(config.author) .. "\"",
+    "author: [" .. stringify_list(config.authors) .. "]",
     "keywords: [" .. keywords_string .. "]",
     "tags: [" .. keywords_string .. "]",
     "---",
@@ -183,8 +213,9 @@ local function get_base_file_name(config)
   end
 
   local base_file_name
-  if config.title and config.author then
-    base_file_name = config.title .. " by " .. config.author
+  if config.title and config.authors[1] then
+    -- first author in list gets top billing (this is problematic in anthologies unless an editor is the first entry)
+    base_file_name = config.title .. " by " .. config.authors[1]
   elseif config.title then
     base_file_name = config.title
   else
@@ -210,10 +241,11 @@ local function write_markdown_file(config)
 
   for section = config.sections.start, config.sections.finish do
     if config.sections.naming then
-      markdown_file:write("\n\n# " .. config.sections.naming .. " " .. tostring(section) .. "\n\n")
-    else
-      markdown_file:write("\n\n\n\n") -- TODO add ability to manually specify names for manually listed sections
+      markdown_file:write("\n\n# " .. config.sections.naming .. " " .. tostring(section))
+    elseif config.section_titles then
+      markdown_file:write("\n\n# " .. config.section_titles[section])
     end
+    markdown_file:write("\n\n")
 
     local section_file_name = "Sections" .. path_separator .. tostring(section)
     local section_file, err = io.open(section_file_name .. ".md", "r")

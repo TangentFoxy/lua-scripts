@@ -2,7 +2,7 @@
 --  this only works if that file is in the same directory as this one - but works no matter where it was called from
 local function _example_load()
   local success, utility = pcall(function()
-    return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua")
+    return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
   end)
   if not success then
     print("\n\n" .. tostring(utility))
@@ -53,7 +53,7 @@ end
 
 utility.require = function(name)
   local success, package_or_err = pcall(function()
-    return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. name .. ".lua")
+    return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. name .. ".lua")
   end)
   if success then
     return package_or_err

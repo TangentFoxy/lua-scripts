@@ -32,7 +32,7 @@ local dbg = opts.debug and function(f,...) prn("d",f:gsub("#LINE#",str(line(3)))
 -- local ElementNode = require"htmlparser.ElementNode"
 -- local voidelements = require"htmlparser.voidelements"
 local success, utility = pcall(function()
-	return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua")
+	return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
 end)
 if not success then
 	print("\n\n" .. tostring(utility))
