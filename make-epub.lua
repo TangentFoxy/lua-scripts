@@ -29,7 +29,7 @@ Configuration example:
     "sections": {
       "start": 1,
       "finish": 5,
-      "naming": "Chapter"
+      "naming": "Chapter" -- not required, but will screw up the Table of Contents if absent
     },
     "page_counts": [1, 5, 3]
   }
@@ -66,6 +66,14 @@ local function get_config()
   if not file then error(err) end
   config = json.decode(file:read("*a"))
   file:close()
+
+  -- detecting manually specified sections and flagging it to the rest of the script
+  if config.sections[1] then
+    config.sections.start = 1
+    config.sections.finish = #config.sections
+    config.manually_specified_sections = true -- decided to make this part of the config spec, but it's set here again just in case
+    config.base_url = "http://example.com/"   -- must be defined to prevent errors; discarded for this use case
+  end
 
   if #config.page_counts ~= config.sections.finish - config.sections.start + 1 then
     error("Number of page_counts does not match number of sections.")
@@ -112,6 +120,10 @@ local function download_pages(config)
       section_url = config.first_section_url
     else
       section_url = config.base_url .. string.format("%02i", section) -- leftpad 2 (This will eventually cause problems.)
+    end
+
+    if config.manually_specified_sections then
+      section_url = config.sections[section]
     end
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
@@ -197,7 +209,11 @@ local function write_markdown_file(config)
   markdown_file:write(format_metadata(config))
 
   for section = config.sections.start, config.sections.finish do
-    markdown_file:write("\n\n# " .. config.sections.naming .. " " .. tostring(section) .. "\n\n")
+    if config.sections.naming then
+      markdown_file:write("\n\n# " .. config.sections.naming .. " " .. tostring(section) .. "\n\n")
+    else
+      markdown_file:write("\n\n\n\n") -- TODO add ability to manually specify names for manually listed sections
+    end
 
     local section_file_name = "Sections" .. path_separator .. tostring(section)
     local section_file, err = io.open(section_file_name .. ".md", "r")
