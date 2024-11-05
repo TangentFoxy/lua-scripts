@@ -24,7 +24,7 @@ Configuration example:
     "author": "Name",
     "title": "Book",
     "keywords": ["fantasy", "dragon", "isekai"],
-    "base_url": "https://www.literotica.com/s/title-ch-",
+    "base_url": "https://www.literotica.com/s/title-ch-", -- not required if only one section
     "first_section_url": "https://www.literotica.com/s/title",
     "sections": {
       "start": 1,
@@ -72,7 +72,7 @@ local function get_config()
     config.sections.start = 1
     config.sections.finish = #config.sections
     config.manually_specified_sections = true -- decided to make this part of the config spec, but it's set here again just in case
-    config.base_url = "http://example.com/"   -- must be defined to prevent errors; discarded for this use case
+    config.base_url = "http://example.com/"   -- must be defined to prevent errors; it will be manipulated and ignored in this use case
   end
 
   if #config.page_counts ~= config.sections.finish - config.sections.start + 1 then
