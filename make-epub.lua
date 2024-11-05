@@ -4,13 +4,16 @@ local help = [[Usage:
 
   make-epub.lua <config (JSON file)> [action]
 
-[action]: If not specified, all steps will be taken in order.
-            download: All pages will be downloaded to their own HTML files.
-            concat:   A file will be created for each section out of its pages.
-            convert:  Each section is converted to Markdown.
-            markdown: Metadata frontmatter and Markdown section files will be
-                      concatenated into a single Markdown file.
-            epub:     Markdown file will be converted to an ePub using pandoc.
+[action]: If not specified, all steps will be taken in order (except cleanall).
+            download:  All pages will be downloaded to their own HTML files.
+            concat:    A file is created for each section out of its pages.
+            convert:   Each section is converted to Markdown.
+            markdown:  Metadata frontmatter and Markdown section files will be
+                       concatenated into a single Markdown file.
+            epub:      Markdown file will be converted to an ePub using pandoc.
+            cleanhtml: All HTML files will be deleted, along with their extra
+                       directories.
+            cleanall:  Deletes everything except the ePub.
 
 Requirements:
 - Lua libraries: htmlparser, dkjson (or compatible)
@@ -212,12 +215,39 @@ local function make_epub(config)
   os.execute("pandoc \"" .. base_file_name .. ".md\" -o \"" .. base_file_name .. ".epub\" --toc=true")
 end
 
+local function rm_html_files(config)
+  for section = config.sections.start, config.sections.finish do
+    local section_dir = "Sections" .. path_separator .. tostring(section)
+    os.execute("rm " .. section_dir .. ".html")
+
+    for page = 1, config.page_counts[section - (config.sections.start - 1)] do
+      os.execute("rm " .. section_dir .. path_separator .. page .. ".html")
+    end
+
+    os.execute("rmdir " .. section_dir)
+  end
+end
+
+local function rm_all(config)
+  rm_html_files(config)
+
+  for section = config.sections.start, config.sections.finish do
+    local section_file_name = "Sections" .. path_separator .. tostring(section) .. ".md"
+    os.execute("rm " .. section_file_name)
+  end
+
+  os.execute("rmdir Sections")
+  os.execute("rm \"" .. get_base_file_name(config) .. ".md\"")
+end
+
 local execute = {
   download = download_pages,
   concat = concatenate_pages,
   convert = convert_sections,
   markdown = write_markdown_file,
   epub = make_epub,
+  cleanhtml = rm_html_files,
+  cleanall = rm_all,
 }
 
 local config = get_config()
@@ -240,5 +270,7 @@ else
   write_markdown_file(config)
   print("\nMaking ePub...\n")
   make_epub(config)
+  print("\nRemoving HTML files...\n")
+  rm_html_files(config)
   print("\nDone!\n")
 end
