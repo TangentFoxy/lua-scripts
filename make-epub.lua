@@ -42,11 +42,25 @@ local function checkreq(name, display)
 end
 
 -- local htmlparser = checkreq("htmlparser") -- so that this can be used for its non-HTML functions without htmlparser installed, this check is delayed
--- local cjson = checkreq('cjson', 'lua-cjson') -- I can't be bothered to figure out why I can't install CJSON on Windows right now
-local cjson = require("json") -- TEMPORARY LOCAL WRONG NAME AAA
+-- local json = checkreq('json', 'dkjson') -- I replaced the default, currently working on making sure it's properly included here..
+local json = require("json") -- TODO replace with utility-function loader
 -- pandoc and curl are also required
 
+local success, utility = pcall(function()
+  return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua")
+end)
+if not success then
+  print("\n\n" .. tostring(utility))
+  error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
+end
+
 local path_separator = "\\" -- temporarily hard-forcing Windows because it's being SUCH A PILE OF GARBAGE
+-- local path_separator
+-- if utility.OS == "Windows" then
+--   path_separator = "\\"
+-- else
+--   path_separator = "/"
+-- end
 
 -- also checks for errors
 -- TODO make it check for required elements and error if any are missing!
@@ -60,7 +74,7 @@ local function get_config()
 
   local file, err = io.open(arg[1], "r")
   if not file then error(err) end
-  config = cjson.decode(file:read("*a"))
+  config = json.decode(file:read("*a"))
   file:close()
 
   if #config.page_counts ~= config.sections.finish - config.sections.start + 1 then
@@ -71,14 +85,10 @@ local function get_config()
 end
 
 local function format_metadata(config)
-  local function escape_quotes(str)
-    return str:gsub("\"", "\\\"")
-  end
-
   local function stringify_list(list)
-    local output = "\"" .. escape_quotes(list[1]) .. "\""
+    local output = "\"" .. utility.escape_quotes(list[1]) .. "\""
     for i = 2, #list do
-      output = output .. ", \"" .. escape_quotes(list[1]) .. "\""
+      output = output .. ", \"" .. utility.escape_quotes(list[1]) .. "\""
     end
     return output
   end
@@ -86,9 +96,9 @@ local function format_metadata(config)
   local keywords_string = stringify_list(config.keywords)
   local metadata = {
     "---",
-    "title: \"" .. escape_quotes(config.title) .. "\"",
+    "title: \"" .. utility.escape_quotes(config.title) .. "\"",
     "author:",
-    "- \"" .. escape_quotes(config.author) .. "\"",
+    "- \"" .. utility.escape_quotes(config.author) .. "\"",
     "keywords: [" .. keywords_string .. "]",
     "tags: [" .. keywords_string .. "]",
     "---",
@@ -99,10 +109,10 @@ local function format_metadata(config)
 end
 
 local function download_pages(config)
-  math.randomseed(os.time()) -- for randomized temporary file name and timings to avoid rate limiting
-  -- local htmlparser = checkreq("htmlparser") -- despite being installed adjacent to this script, it is failing to load - turns out I was directed to the WRONG VERSION
-  local htmlparser = require "htmlparser"
-  -- TODO add check for curl here
+  -- no longer necessary because utility initializes it for us
+  -- math.randomseed(os.time()) -- for randomized temporary file name and timings to avoid rate limiting
+  local htmlparser = require "htmlparser" -- TODO replace with local load
+  utility.required_program("curl")
 
   os.execute("mkdir Sections")
   for section = config.sections.start, config.sections.finish do
@@ -113,7 +123,7 @@ local function download_pages(config)
     if section == 1 and config.first_section_url then
       section_url = config.first_section_url
     else
-      section_url = config.base_url .. string.format("%02i", section) -- leftpad 2
+      section_url = config.base_url .. string.format("%02i", section) -- leftpad 2 (This will eventually cause problems.)
     end
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
@@ -134,7 +144,7 @@ local function download_pages(config)
       os.execute("rm " .. html_file_name)
 
       local parser = htmlparser.parse(raw_html)
-      local content_tag = parser:select(".article > div > div") -- TODO add other selectors!
+      local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
       local text = content_tag[1]:getcontent()
 
       local page_file, err = io.open(section_dir .. page .. ".html", "w")
@@ -163,6 +173,7 @@ local function concatenate_pages(config)
 end
 
 local function get_base_file_name(config)
+  -- TODO move this function to utility
   local function make_safe_file_name(file_name)
     file_name = file_name:gsub("[%\"%:%\\%!%@%#%$%%%^%*%=%{%}%|%;%<%>%?%/]", "") -- everything except the &
     file_name = file_name:gsub(" %&", ",")   -- replacing & with a comma works for 99% of things
@@ -184,6 +195,8 @@ local function get_base_file_name(config)
 end
 
 local function convert_sections(config)
+  -- the HTML I'm pulling from is often bugged in a way that breaks ebook readers, but pandoc can understand and fix in Markdown
+  utility.required_program("pandoc")
   for section = config.sections.start, config.sections.finish do
     local section_file_name = "Sections" .. path_separator .. tostring(section)
     os.execute("pandoc \"" .. section_file_name .. ".html\" -o \"" .. section_file_name .. ".md\"")
@@ -209,7 +222,7 @@ local function write_markdown_file(config)
 end
 
 local function make_epub(config)
-  -- TODO check for pandoc being installed
+  utility.required_program("pandoc")
   local base_file_name = get_base_file_name(config)
   os.execute("pandoc \"" .. base_file_name .. ".md\" -o \"" .. base_file_name .. ".epub\" --toc=true")
 end
