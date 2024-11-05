@@ -32,20 +32,6 @@ Configuration example:
   }
 ]]
 
-local function checkreq(name, display)
-  local success, library = pcall(function() return require(name) end)
-  if not success then
-    error("'" .. (display or name) .. "' missing or failed to load.")
-  else
-    return library
-  end
-end
-
--- local htmlparser = checkreq("htmlparser") -- so that this can be used for its non-HTML functions without htmlparser installed, this check is delayed
--- local json = checkreq('json', 'dkjson') -- I replaced the default, currently working on making sure it's properly included here..
-local json = require("json") -- TODO replace with utility-function loader
--- pandoc and curl are also required
-
 local success, utility = pcall(function()
   return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua")
 end)
@@ -54,13 +40,14 @@ if not success then
   error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
 end
 
-local path_separator = "\\" -- temporarily hard-forcing Windows because it's being SUCH A PILE OF GARBAGE
--- local path_separator
--- if utility.OS == "Windows" then
---   path_separator = "\\"
--- else
---   path_separator = "/"
--- end
+local json = utility.require("json")
+
+local path_separator
+if utility.OS == "Windows" then
+  path_separator = "\\"
+else
+  path_separator = "/"
+end
 
 -- also checks for errors
 -- TODO make it check for required elements and error if any are missing!
@@ -69,7 +56,7 @@ local function get_config()
     print(help)
     error("\nA config file name/path must be specified.")
   elseif arg[1] == "-h" or arg[1] == "--help" then
-    error(help)
+    error(help) -- I strongly dislike using an error to print a help message instead of gracefully exiting..
   end
 
   local file, err = io.open(arg[1], "r")
@@ -109,9 +96,7 @@ local function format_metadata(config)
 end
 
 local function download_pages(config)
-  -- no longer necessary because utility initializes it for us
-  -- math.randomseed(os.time()) -- for randomized temporary file name and timings to avoid rate limiting
-  local htmlparser = require "htmlparser" -- TODO replace with local load
+  local htmlparser = utility.require("htmlparser")
   utility.required_program("curl")
 
   os.execute("mkdir Sections")

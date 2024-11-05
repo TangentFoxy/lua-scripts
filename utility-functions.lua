@@ -1,3 +1,15 @@
+-- TO USE, PUT THE INTERIOR OF THIS FUNCTION IN YOUR FILE
+--  this only works if that file is in the same directory as this one - but works no matter where it was called from
+local function _example_load()
+  local success, utility = pcall(function()
+    return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua")
+  end)
+  if not success then
+    print("\n\n" .. tostring(utility))
+    error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
+  end
+end
+
 math.randomseed(os.time())
 
 local utility = {}
@@ -8,7 +20,7 @@ else
   utility.OS = "UNIX-like"
 end
 
-utility.path = arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") -- related to discussion in https://stackoverflow.com/q/6380820
+utility.path = arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") -- inspired by discussion in https://stackoverflow.com/q/6380820
 
 -- always uses outputting to a temporary file to guarantee safety
 function os.capture_safe(command, tmp_file_name)
@@ -39,6 +51,19 @@ function string.trim(s)
   return s:match'^()%s*$' and '' or s:match'^%s*(.*%S)'
 end
 
+utility.require = function(name)
+  local success, package_or_err = pcall(function()
+    return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. name .. ".lua")
+  end)
+  if success then
+    return package_or_err
+  else
+    print("\n\n" .. tostring(package_or_err))
+    error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
+  end
+end
+
+-- errors if specified program isn't in the path
 utility.required_program = function(name)
   local command
   if utility.OS == "Windows" then
@@ -74,6 +99,7 @@ utility.escape_quotes = function(input)
   return input
 end
 
+-- Example, print all items in this directory: utility.ls(".")(print)
 utility.ls = function(path)
   local command
   if utility.OS == "Windows" then
