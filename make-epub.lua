@@ -6,8 +6,8 @@ local help = [[Usage:
 
 [action]: If not specified, all steps will be taken in order (except clean*).
             download:  All pages will be downloaded to their own HTML files.
+            convert:   Each page is converted to Markdown.
             concat:    A file is created for each section out of its pages.
-            convert:   Each section is converted to Markdown.
             markdown:  Metadata frontmatter and Markdown section files will be
                        concatenated into a single Markdown file.
             epub:      Markdown file will be converted to an ePub using pandoc.
@@ -202,23 +202,36 @@ local function download_pages(config)
   end
 end
 
+local function convert_pages(config)
+  utility.required_program("pandoc")
+  for section = config.sections.start, config.sections.finish do
+    local section_dir = "Sections" .. path_separator .. tostring(section) .. path_separator
+
+    for page = 1, config.page_counts[section - (config.sections.start - 1)] do
+      local page_file_name_base = section_dir .. page
+      os.execute("pandoc --from html --to markdown \"" .. page_file_name_base .. ".html\" -o \"" .. page_file_name_base .. ".md\"")
+    end
+  end
+end
+
 local function concatenate_pages(config)
   for section = config.sections.start, config.sections.finish do
-    local section_dir = "Sections" ..path_separator .. tostring(section) .. path_separator
-    local section_file, err = io.open("Sections" .. path_separator .. tostring(section) .. ".html", "w")
+    local section_dir = "Sections" .. path_separator .. tostring(section) .. path_separator
+    local section_file, err = io.open("Sections" .. path_separator .. tostring(section) .. ".md", "w")
     if not section_file then error(err) end
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-      local page_file, err = io.open(section_dir .. page .. ".html", "r")
+      local page_file, err = io.open(section_dir .. page .. ".md", "r")
       if not page_file then error(err) end
-      section_file:write(page_file:read("*a") .. "\n")
+      section_file:write(page_file:read("*a") .. "\n") -- the \n probably isn't needed, but does guarantee safety..
       page_file:close()
     end
   end
 end
 
+-- TODO define this earlier, use it to choose where files go (this will also require every command executed to have quotes wrapping it!)
 local function get_base_file_name(config)
-  -- TODO move this function to utility
+  -- TODO move make_safe_file_name to utility
   local function make_safe_file_name(file_name)
     file_name = file_name:gsub("[%\"%:%\\%!%@%#%$%%%^%*%=%{%}%|%;%<%>%?%/]", "") -- everything except the &
     file_name = file_name:gsub(" %&", ",")   -- replacing & with a comma works for 99% of things
@@ -240,6 +253,7 @@ local function get_base_file_name(config)
   return make_safe_file_name(base_file_name)
 end
 
+-- NOTE deprecated (order of operations had to be changed, see #25)
 local function convert_sections(config)
   utility.required_program("pandoc")
   for section = config.sections.start, config.sections.finish do
@@ -288,11 +302,12 @@ local function rm_html_files(config)
       os.execute("rm " .. section_dir .. path_separator .. page .. ".html")
     end
 
-    os.execute("rmdir " .. section_dir)
+    os.execute("rmdir " .. section_dir) -- NOTE this is no longer possible due to Markdown versions of each page existing
   end
 end
 
 local function rm_all(config)
+  -- TODO use structure of rm_html_files because there's a Markdown file for every HTML file now..
   rm_html_files(config)
 
   for section = config.sections.start, config.sections.finish do
@@ -306,8 +321,8 @@ end
 
 local execute = {
   download = download_pages,
+  convert = convert_pages,
   concat = concatenate_pages,
-  convert = convert_sections,
   markdown = write_markdown_file,
   epub = make_epub,
   cleanhtml = rm_html_files,
@@ -326,10 +341,10 @@ if action then
 else
   print("\nDownloading pages...\n")
   download_pages(config)
+  print("\nConverting pages...\n")
+  convert_pages(config)
   print("\nConcatenating pages...\n")
   concatenate_pages(config)
-  print("\nConverting sections...\n")
-  convert_sections(config)
   print("\nWriting Markdown file...\n")
   write_markdown_file(config)
   print("\nMaking ePub...\n")
