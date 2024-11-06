@@ -278,6 +278,8 @@ local function make_epub(config)
 end
 
 local function rm_html_files(config)
+  os.execute("sleep 1") -- attempt to fix #14
+
   for section = config.sections.start, config.sections.finish do
     local section_dir = "Sections" .. path_separator .. tostring(section)
     os.execute("rm " .. section_dir .. ".html")
