@@ -19,7 +19,14 @@ if arg[1] and arg[1]:find("help") then
   return false
 end
 
-local error_occurred, utility = pcall(function() return dofile(arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") .. "utility-functions.lua") end) if not error_occurred then error("\n\nThis script is installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n") end
+local success, utility = pcall(function()
+  return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
+end)
+if not success then
+  print("\n\n" .. tostring(utility))
+  error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
+end
+
 utility.required_program("ffmpeg")
 
 local tune
