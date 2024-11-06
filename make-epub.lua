@@ -4,7 +4,7 @@ local help = [[Usage:
 
   make-epub.lua <config (JSON file)> [action]
 
-[action]: If not specified, all steps will be taken in order (except cleanall).
+[action]: If not specified, all steps will be taken in order (except clean*).
             download:  All pages will be downloaded to their own HTML files.
             concat:    A file is created for each section out of its pages.
             convert:   Each section is converted to Markdown.
@@ -21,23 +21,24 @@ Requirements:
 
 Configuration example(s):
   {
-    "authors": ["Name"], -- "author" with a single string also supported
+    "authors": ["Name"],
     "title": "Book",
     "keywords": ["erotica", "fantasy"],
-    "base_url": "https://www.literotica.com/s/title-ch-", -- not required if only one section
-    "first_section_url": "https://www.literotica.com/s/title",  -- only if first section is differently-formatted
+    "base_url": "https://www.literotica.com/s/title-ch-",
+    "first_section_url": "https://www.literotica.com/s/title",
     "sections": {
       "start": 1,
       "finish": 4,
-      "naming": "Chapter" -- only required for a Table of Contents (unless using anthology form below)
+      "naming": "Chapter"
     },
     "page_counts": [1, 5, 3, 3]
   }
 
   {
-    "authors": ["Name"], -- first author will be used as the book's primary author
+    "authors": ["Name"],
     "title": "Anthology",
-    "keywords": ["erotica", "fantasy"],
+    "keywords": ["LitErotica", "erotica"],
+    "manually_specified_sections": true,
     "sections": [
       "https://www.literotica.com/s/unique-title",
       "https://www.literotica.com/s/another-title"
@@ -49,7 +50,7 @@ Configuration example(s):
     "page_counts": [5, 2]
   }
 
-  For an explanation of these examples, see the .lua-files ReadMe.
+  For an explanation of these examples, see the .lua-files README.
 ]]
 
 local success, utility = pcall(function()
@@ -86,12 +87,22 @@ local function get_config()
   config = json.decode(file:read("*a"))
   file:close()
 
+  -- authors wasn't being loaded correctly and I accidentally fixed it while trying to find what was wrong..
+  -- for k,v in pairs(config) do
+  --   print(k,v)
+  -- end
+  -- print("config done")
+
   if not config.authors then
     config.authors = {} -- at least have an empty table so it doesn't error below
   end
 
-  if type(config.author) then -- old style single author will be added to authors list
-    table.insert(config.authors, config.author)
+  if config.author then -- old style single author will be prepended to authors list
+    table.insert(config.authors, 1, config.author)
+  end
+
+  if not config.keywords then
+    config.keywords = {} -- TODO test if it will work empty
   end
 
   -- detecting manually specified sections and flagging it to the rest of the script
@@ -100,6 +111,10 @@ local function get_config()
     config.sections.finish = #config.sections
     config.manually_specified_sections = true -- decided to make this part of the config spec, but it's set here again just in case
     config.base_url = "http://example.com/"   -- must be defined to prevent errors; it will be manipulated and ignored in this use case
+  end
+
+  if not config.sections.start then
+    config.sections.start = 1 -- the first one can be optional since the common use case is ALL OF THEM
   end
 
   if #config.page_counts ~= config.sections.finish - config.sections.start + 1 then
@@ -226,11 +241,10 @@ local function get_base_file_name(config)
 end
 
 local function convert_sections(config)
-  -- the HTML I'm pulling from is often bugged in a way that breaks ebook readers, but pandoc can understand and fix in Markdown
   utility.required_program("pandoc")
   for section = config.sections.start, config.sections.finish do
     local section_file_name = "Sections" .. path_separator .. tostring(section)
-    os.execute("pandoc \"" .. section_file_name .. ".html\" -o \"" .. section_file_name .. ".md\"")
+    os.execute("pandoc --from html --to markdown \"" .. section_file_name .. ".html\" -o \"" .. section_file_name .. ".md\"")
   end
 end
 
@@ -260,7 +274,7 @@ end
 local function make_epub(config)
   utility.required_program("pandoc")
   local base_file_name = get_base_file_name(config)
-  os.execute("pandoc \"" .. base_file_name .. ".md\" -o \"" .. base_file_name .. ".epub\" --toc=true")
+  os.execute("pandoc --from markdown --to epub \"" .. base_file_name .. ".md\" -o \"" .. base_file_name .. ".epub\" --toc=true")
 end
 
 local function rm_html_files(config)
@@ -318,7 +332,7 @@ else
   write_markdown_file(config)
   print("\nMaking ePub...\n")
   make_epub(config)
-  print("\nRemoving HTML files...\n")
-  rm_html_files(config)
+  -- print("\nRemoving HTML files...\n")
+  -- rm_html_files(config)
   print("\nDone!\n")
 end
