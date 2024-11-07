@@ -40,26 +40,13 @@ else
 end
 
 local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
-local raw_config -- TODO file handling for configs should probably be in the argument parsing portion
 
--- also checks for errors
--- TODO make it check for required elements and error if any are missing!
-local function get_config()
+-- also checks for errors TODO make it check for ALL required elements and error if any are missing!
+local function load_config(config_file_text)
   local json = utility.require("json")
 
-  -- TODO arg checking REALLY should not be here
-  if not arg[1] then
-    print(help)
-    error("\nA config file name/path must be specified.")
-  elseif arg[1] == "-h" or arg[1] == "--help" then
-    error(help) -- I strongly dislike using an error to print a help message instead of gracefully exiting..
-  end
-
-  local file, err = io.open(arg[1], "r")
-  if not file then error(err) end
-  raw_config = file:read("*a") -- TODO file handling for configs should probably be in the argument parsing portion
-  config = json.decode(raw_config)
-  file:close()
+  config = json.decode(config_file_text)
+  config.config_file_text = config_file_text
 
   if not config.authors then
     config.authors = {} -- at least have an empty table so it doesn't error below TODO verify that this is actually true
@@ -125,7 +112,7 @@ local function format_metadata(config)
   return table.concat(metadata, "\n") .. "\n"
 end
 
--- TODO since this is called many times across the program, make get_config SET this within the config and use that instead!
+-- TODO since this is called many times across the program, make load_config SET this within the config and use that instead!
 local function get_base_file_name(config)
   -- TODO move make_safe_file_name to utility
   local function make_safe_file_name(file_name)
@@ -276,7 +263,7 @@ local function write_markdown_file(config)
   markdown_file:write("# Ebook Creation Metadata\n\n")
   markdown_file:write(copyright_warning)
   markdown_file:write("This ebook was created using the following config:\n\n")
-  markdown_file:write("```json\n" .. raw_config .. "\n```\n")
+  markdown_file:write("```json\n" .. config.config_file_text .. "\n```\n")
   markdown_file:close()
 end
 
@@ -319,7 +306,35 @@ local function rm_all(config)
   os.execute("rm " .. (get_base_file_name(config) .. ".md"):enquote())
 end
 
-local execute = {
+local function argparse(arguments, positional_arguments)
+  local recognized_arguments = {}
+  for index, argument in ipairs(arguments) do
+    for _, help in ipairs({"-h", "--help", "/?", "/help", "help"}) do
+      if argument == help then
+        print(help)
+        return nil
+      end
+    end
+    if positional_arguments[index] then
+      recognized_arguments[positional_arguments[index]] = argument
+    end
+  end
+  return recognized_arguments
+end
+
+local positional_arguments = {"json_file_name", "action"}
+local arguments = argparse(arg, positional_arguments)
+if not arguments.json_file_name then
+  print(help)
+  error("\nA config file name/path must be specified.")
+end
+
+local config_file, err = io.open(arguments.json_file_name, "r")
+if not config_file then error(err) end
+local config = load_config(config_file:read("*all"))
+config_file:close()
+
+local actions = {
   download = download_pages,
   convert = convert_pages,
   concat = concatenate_pages,
@@ -329,14 +344,12 @@ local execute = {
   cleanall = rm_all,
 }
 
-local config = get_config()
-
-local action = arg[2]
-if action then
-  if execute[action] then
-    execute[action](config)
+if arguments.action then
+  if actions[arguments.action] then
+    actions[arguments.action](config)
   else
     print(help)
+    error("\nInvalid action specified.")
   end
 else
   print("\nDownloading pages...\n")
