@@ -20,7 +20,7 @@ Requirements:
 - Binaries:      pandoc, curl
 
 For how to write a configuration and examples, see the .lua-files README:
-  https://github.com/TangentFoxy/.lua-files
+  https://github.com/TangentFoxy/.lua-files#make-epublua
 ]]
 
 local success, utility = pcall(function()
@@ -60,12 +60,6 @@ local function get_config()
   raw_config = file:read("*a") -- TODO file handling for configs should probably be in the argument parsing portion
   config = json.decode(raw_config)
   file:close()
-
-  -- authors wasn't being loaded correctly and I accidentally fixed it while trying to find what was wrong..
-  -- for k,v in pairs(config) do
-  --   print(k,v)
-  -- end
-  -- print("config done")
 
   if not config.authors then
     config.authors = {} -- at least have an empty table so it doesn't error below TODO verify that this is actually true
