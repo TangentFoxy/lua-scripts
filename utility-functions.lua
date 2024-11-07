@@ -17,7 +17,7 @@ local utility = {}
 if package.config:sub(1, 1) == "\\" then
   utility.OS = "Windows"
   utility.path_separator = "\\"
-  utility.recursive_remove_command = "rmdir /s "
+  utility.recursive_remove_command = "rmdir /s /q "
 else
   utility.OS = "UNIX-like"
   utility.path_separator = "/"
