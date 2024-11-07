@@ -282,9 +282,11 @@ end
 
 local function make_epub(config)
   utility.required_program("pandoc")
+  local output_dir = "All ePubs"
+  os.execute("mkdir " .. output_dir:enquote())
 
   local base_file_name = get_base_file_name(config)
-  os.execute("pandoc --from markdown --to epub " .. (base_file_name .. ".md"):enquote() .. " -o " .. (base_file_name .. ".epub"):enquote() .. " --toc=true")
+  os.execute("pandoc --from markdown --to epub " .. (base_file_name .. ".md"):enquote() .. " -o " .. (output_dir .. path_separator .. base_file_name .. ".epub"):enquote() .. " --toc=true")
 end
 
 local function rm_html_files(config)
