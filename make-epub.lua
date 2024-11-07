@@ -19,7 +19,6 @@ will be used to make multiple ebooks back-to-back.
             cleanall:  Deletes everything except the config file and ePub.
 
 Requirements:
-- Lua libraries: htmlparser, dkjson (or compatible)
 - Binaries:      pandoc, curl
 
 For how to write a configuration and examples, see the .lua-files README:
@@ -235,6 +234,7 @@ end
 
 local function write_markdown_file(config)
   local working_dir = get_base_file_name(config)
+  os.execute("sleep 1") -- fix race condition from the previous command
 
   local markdown_file, err = io.open(get_base_file_name(config) .. ".md", "w")
   if not markdown_file then error(err) end
@@ -274,7 +274,7 @@ end
 
 local function rm_page_files(config)
   local working_dir = get_base_file_name(config)
-  os.execute("sleep 1") -- attempt to fix #14
+  os.execute("sleep 1") -- fix #14 race condition from the previous command
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = working_dir .. path_separator .. tostring(section)

@@ -38,7 +38,6 @@ will be used to make multiple ebooks back-to-back.
             cleanall:  Deletes everything except the config file and ePub.
 
 Requirements:
-- Lua libraries: htmlparser, dkjson (or compatible)
 - Binaries:      pandoc, curl
 ```
 
