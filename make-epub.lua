@@ -31,14 +31,7 @@ if not success then
   error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
 end
 
--- TODO utility.path_separator should be a thing
-local path_separator
-if utility.OS == "Windows" then
-  path_separator = "\\"
-else
-  path_separator = "/"
-end
-
+local path_separator = utility.path_separator
 local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
 
 -- also checks for errors TODO make it check for ALL required elements and error if any are missing!
@@ -322,6 +315,46 @@ local function argparse(arguments, positional_arguments)
   return recognized_arguments
 end
 
+local function main(arguments)
+  local config_file, err = io.open(arguments.json_file_name, "r")
+  if not config_file then error(err) end
+  local config = load_config(config_file:read("*all"))
+  config_file:close()
+
+  local actions = {
+    download = download_pages,
+    convert = convert_pages,
+    concat = concatenate_pages,
+    markdown = write_markdown_file,
+    epub = make_epub,
+    cleanhtml = rm_html_files,
+    cleanall = rm_all,
+  }
+
+  if arguments.action then
+    if actions[arguments.action] then
+      actions[arguments.action](config)
+    else
+      print(help)
+      error("\nInvalid action specified.")
+    end
+  else
+    print("\nDownloading pages...\n")
+    download_pages(config)
+    print("\nConverting pages...\n")
+    convert_pages(config)
+    print("\nConcatenating pages...\n")
+    concatenate_pages(config)
+    print("\nWriting Markdown file...\n")
+    write_markdown_file(config)
+    print("\nMaking ePub...\n")
+    make_epub(config)
+    -- print("\nRemoving HTML files...\n")
+    -- rm_html_files(config)
+    print("\nDone!\n")
+  end
+end
+
 local positional_arguments = {"json_file_name", "action"}
 local arguments = argparse(arg, positional_arguments)
 if not arguments.json_file_name then
@@ -329,40 +362,13 @@ if not arguments.json_file_name then
   error("\nA config file name/path must be specified.")
 end
 
-local config_file, err = io.open(arguments.json_file_name, "r")
-if not config_file then error(err) end
-local config = load_config(config_file:read("*all"))
-config_file:close()
-
-local actions = {
-  download = download_pages,
-  convert = convert_pages,
-  concat = concatenate_pages,
-  markdown = write_markdown_file,
-  epub = make_epub,
-  cleanhtml = rm_html_files,
-  cleanall = rm_all,
-}
-
-if arguments.action then
-  if actions[arguments.action] then
-    actions[arguments.action](config)
-  else
-    print(help)
-    error("\nInvalid action specified.")
-  end
+if arguments.json_file_name == "." then
+  utility.ls(".")(function(file_name)
+    if file_name:find(".json$") then
+      arguments.json_file_name = file_name
+      main(arguments)
+    end
+  end)
 else
-  print("\nDownloading pages...\n")
-  download_pages(config)
-  print("\nConverting pages...\n")
-  convert_pages(config)
-  print("\nConcatenating pages...\n")
-  concatenate_pages(config)
-  print("\nWriting Markdown file...\n")
-  write_markdown_file(config)
-  print("\nMaking ePub...\n")
-  make_epub(config)
-  -- print("\nRemoving HTML files...\n")
-  -- rm_html_files(config)
-  print("\nDone!\n")
+  main(arguments)
 end

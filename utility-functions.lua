@@ -16,8 +16,10 @@ local utility = {}
 
 if package.config:sub(1, 1) == "\\" then
   utility.OS = "Windows"
+  utility.path_separator = "\\"
 else
   utility.OS = "UNIX-like"
+  utility.path_separator = "/"
 end
 
 utility.path = arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") -- inspired by discussion in https://stackoverflow.com/q/6380820
