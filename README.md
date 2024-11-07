@@ -25,16 +25,16 @@ The following is shared:
 - `title`: (Optional) String: Title of book.
 - `base_file_name`: (Optional) String: Alternate final file name. (Default: "`title` by `author`" or just "`title`".)
 - `keywords`: Array of Strings: Keywords/Tags. (I'm not sure what the difference is in the final output so it goes in both.)
-- `sections`: \! See "Book"/"Anthology" variations. (I call LitErotica's stories sections - because they are often part of a larger whole.)
+- `sections`: **See "Book"/"Anthology" variations.** (I call LitErotica's stories sections - because they are often part of a larger whole.)
 - `page_counts`: Array of Integers: The number of pages on LitErotica per "story". (I call them sections because this script was made to put together story series originally.)
 
 #### Variation: Book
-- `base_url`: String: A partial URL that is the beginning of the URL used for each section (story) on LitErotica. (This script currently only works for stories that end in a padded two-digit number.)
-- `first_section_url`: String: Some stories don't have the same URL structure for their first section. This allows you to specify its full URL.
+- `base_url`: String: A partial URL that is the beginning of the URL used for each section (story) on LitErotica. (This script currently only works for stories that end in a padded two-digit number.) (Technically optional if `first_section_url` is specified, and `sections.start` and `sections.finish` are both `1`.)
+- `first_section_url`: (Optional) String: Some stories don't have the same URL structure for their first section. This allows you to specify its full URL.
 - `sections`: Object defining which sections to download, and what to call them (ie. Chapters, Parts, ..).
   - `start`: (Optional) Number: Where to start. (`1` is the default, since it is the most common.)
   - `finish`: Number: Where to end.
-  - `naming`: (Optional) String: How to name sections in the final output. The result is `[naming] [#]` (using section numbers). If not specified, there will be no Table of Contents.
+  - `naming`: (Optional) String: How to name sections in the final output. The result is `[naming] [#]` (using section numbers). (If not specified, sections will not have headings.)
   - `automatic_naming`: (Optional) Boolean: If any line matches "Prologue" or "Chapter #" (any number), it will be made into a heading. (Note: This does not override `naming`. Both can be used together.)
 
 Example:

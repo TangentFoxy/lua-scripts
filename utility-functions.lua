@@ -51,6 +51,10 @@ function string.trim(s)
   return s:match'^()%s*$' and '' or s:match'^%s*(.*%S)'
 end
 
+function string.enquote(s)
+  return "\"" .. s .. "\""
+end
+
 utility.require = function(name)
   local success, package_or_err = pcall(function()
     return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. name .. ".lua")

@@ -31,8 +31,6 @@ if not success then
   error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
 end
 
-local json = utility.require("json")
-
 -- TODO utility.path_separator should be a thing
 local path_separator
 if utility.OS == "Windows" then
@@ -47,6 +45,8 @@ local raw_config -- TODO file handling for configs should probably be in the arg
 -- also checks for errors
 -- TODO make it check for required elements and error if any are missing!
 local function get_config()
+  local json = utility.require("json")
+
   -- TODO arg checking REALLY should not be here
   if not arg[1] then
     print(help)
@@ -73,6 +73,11 @@ local function get_config()
     table.insert(config.authors, 1, config.author)
   end
 
+  -- if only using a single section
+  if config.first_section_url and not config.base_url then
+    config.base_url = config.first_section_url -- prevent errors due to required item being missing
+  end
+
   -- detecting manually specified sections and flagging it to the rest of the script
   if config.sections[1] then
     config.sections.start = 1
@@ -97,10 +102,11 @@ local function get_config()
 end
 
 local function format_metadata(config)
+  -- TODO use enquote
   local function stringify_list(list)
-    local output = "\"" .. utility.escape_quotes(list[1]) .. "\""
+    local output = utility.escape_quotes(list[1]):enquote()
     for i = 2, #list do
-      output = output .. ", \"" .. utility.escape_quotes(list[i]) .. "\""
+      output = output .. ", " .. utility.escape_quotes(list[i]):enquote()
     end
     return output
   end
@@ -108,7 +114,7 @@ local function format_metadata(config)
   local keywords_string = stringify_list(config.keywords)
   local metadata = {
     "---",
-    "title: \"" .. utility.escape_quotes(config.title) .. "\"",
+    "title: " .. utility.escape_quotes(config.title):enquote(),
     "author: [" .. stringify_list(config.authors) .. "]",
     "keywords: [" .. keywords_string .. "]",
     "tags: [" .. keywords_string .. "]",
@@ -119,14 +125,39 @@ local function format_metadata(config)
   return table.concat(metadata, "\n") .. "\n"
 end
 
+-- TODO since this is called many times across the program, make get_config SET this within the config and use that instead!
+local function get_base_file_name(config)
+  -- TODO move make_safe_file_name to utility
+  local function make_safe_file_name(file_name)
+    file_name = file_name:gsub("[%\"%:%\\%!%@%#%$%%%^%*%=%{%}%|%;%<%>%?%/]", "") -- everything except the &
+    file_name = file_name:gsub(" %&", ",")   -- replacing & with a comma works for 99% of things
+    file_name = file_name:gsub("%&", ",")    -- replacing & with a comma works for 99% of things
+    file_name = file_name:gsub("[%s+]", " ") -- more than one space in succession should be a single space
+    return file_name
+  end
+
+  local base_file_name
+  if config.title and config.authors[1] then
+    -- first author in list gets top billing (this is problematic in anthologies unless an editor is the first entry)
+    base_file_name = config.title .. " by " .. config.authors[1]
+  elseif config.title then
+    base_file_name = config.title
+  else
+    base_file_name = "Book"
+  end
+
+  return make_safe_file_name(config.base_file_name or base_file_name)
+end
+
 local function download_pages(config)
   local htmlparser = utility.require("htmlparser")
   utility.required_program("curl")
+  local working_dir = get_base_file_name(config)
 
-  os.execute("mkdir Sections")
+  os.execute("mkdir " .. working_dir:enquote())
   for section = config.sections.start, config.sections.finish do
-    local section_dir = "Sections" .. path_separator .. tostring(section) .. path_separator
-    os.execute("mkdir " .. section_dir:sub(1, -2))
+    local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
+    os.execute("mkdir " .. section_dir:sub(1, -2):enquote())
 
     local section_url
     if section == 1 and config.first_section_url then
@@ -147,14 +178,14 @@ local function download_pages(config)
         download_url = section_url .. "?page=" .. tostring(page)
       end
 
-      local html_file_name = ".tmp." .. tostring(math.random()) .. ".html"
-      os.execute("curl \"" ..download_url .. "\" > " .. html_file_name)
+      local temporary_html_file_name = utility.tmp_file_name()
+      os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
 
-      local html_file, err = io.open(html_file_name, "r")
-      if not html_file then error("Could not download \"" .. download_url .. "\"") end
+      local html_file, err = io.open(temporary_html_file_name, "r")
+      if not html_file then error("Could not download " .. download_url:enquote()) end
       local raw_html = html_file:read("*a")
       html_file:close()
-      os.execute("rm " .. html_file_name)
+      os.execute("rm " .. temporary_html_file_name)
 
       local parser = htmlparser.parse(raw_html)
       local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
@@ -172,20 +203,24 @@ end
 
 local function convert_pages(config)
   utility.required_program("pandoc")
+  local working_dir = get_base_file_name(config)
+
   for section = config.sections.start, config.sections.finish do
-    local section_dir = "Sections" .. path_separator .. tostring(section) .. path_separator
+    local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
       local page_file_name_base = section_dir .. page
-      os.execute("pandoc --from html --to markdown \"" .. page_file_name_base .. ".html\" -o \"" .. page_file_name_base .. ".md\"")
+      os.execute("pandoc --from html --to markdown " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
     end
   end
 end
 
 local function concatenate_pages(config)
+  local working_dir = get_base_file_name(config)
+
   for section = config.sections.start, config.sections.finish do
-    local section_dir = "Sections" .. path_separator .. tostring(section) .. path_separator
-    local section_file, err = io.open("Sections" .. path_separator .. tostring(section) .. ".md", "w")
+    local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
+    local section_file, err = io.open(working_dir .. path_separator .. tostring(section) .. ".md", "w")
     if not section_file then error(err) end
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
@@ -215,40 +250,9 @@ local function concatenate_pages(config)
   end
 end
 
--- TODO define this earlier, use it to choose where files go (this will also require every command executed to have quotes wrapping it!)
-local function get_base_file_name(config)
-  -- TODO move make_safe_file_name to utility
-  local function make_safe_file_name(file_name)
-    file_name = file_name:gsub("[%\"%:%\\%!%@%#%$%%%^%*%=%{%}%|%;%<%>%?%/]", "") -- everything except the &
-    file_name = file_name:gsub(" %&", ",")   -- replacing & with a comma works for 99% of things
-    file_name = file_name:gsub("%&", ",")    -- replacing & with a comma works for 99% of things
-    file_name = file_name:gsub("[%s+]", " ") -- more than one space in succession should be a single space
-    return file_name
-  end
-
-  local base_file_name
-  if config.title and config.authors[1] then
-    -- first author in list gets top billing (this is problematic in anthologies unless an editor is the first entry)
-    base_file_name = config.title .. " by " .. config.authors[1]
-  elseif config.title then
-    base_file_name = config.title
-  else
-    base_file_name = "Book"
-  end
-
-  return make_safe_file_name(config.base_file_name or base_file_name)
-end
-
--- NOTE deprecated (order of operations had to be changed, see #25)
-local function convert_sections(config)
-  utility.required_program("pandoc")
-  for section = config.sections.start, config.sections.finish do
-    local section_file_name = "Sections" .. path_separator .. tostring(section)
-    os.execute("pandoc --from html --to markdown \"" .. section_file_name .. ".html\" -o \"" .. section_file_name .. ".md\"")
-  end
-end
-
 local function write_markdown_file(config)
+  local working_dir = get_base_file_name(config)
+
   local markdown_file, err = io.open(get_base_file_name(config) .. ".md", "w")
   if not markdown_file then error(err) end
   markdown_file:write(format_metadata(config))
@@ -262,7 +266,7 @@ local function write_markdown_file(config)
     end
     markdown_file:write("\n\n")
 
-    local section_file_name = "Sections" .. path_separator .. tostring(section)
+    local section_file_name = working_dir .. path_separator .. tostring(section)
     local section_file, err = io.open(section_file_name .. ".md", "r")
     if not section_file then error(err) end
     markdown_file:write(section_file:read("*a"))
@@ -278,36 +282,39 @@ end
 
 local function make_epub(config)
   utility.required_program("pandoc")
+
   local base_file_name = get_base_file_name(config)
-  os.execute("pandoc --from markdown --to epub \"" .. base_file_name .. ".md\" -o \"" .. base_file_name .. ".epub\" --toc=true")
+  os.execute("pandoc --from markdown --to epub " .. (base_file_name .. ".md"):enquote() .. " -o " .. (base_file_name .. ".epub"):enquote() .. " --toc=true")
 end
 
 local function rm_html_files(config)
+  local working_dir = get_base_file_name(config)
   os.execute("sleep 1") -- attempt to fix #14
 
   for section = config.sections.start, config.sections.finish do
-    local section_dir = "Sections" .. path_separator .. tostring(section)
-    os.execute("rm " .. section_dir .. ".html")
+    local section_dir = working_dir .. path_separator .. tostring(section)
+    os.execute("rm " .. (section_dir .. ".html"):enquote())
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-      os.execute("rm " .. section_dir .. path_separator .. page .. ".html")
+      os.execute("rm " .. (section_dir .. path_separator .. page .. ".html"):enquote())
     end
 
-    os.execute("rmdir " .. section_dir) -- NOTE this is no longer possible due to Markdown versions of each page existing
+    os.execute("rmdir " .. section_dir:enquote()) -- NOTE this is no longer possible due to Markdown versions of each page existing
   end
 end
 
 local function rm_all(config)
   -- TODO use structure of rm_html_files because there's a Markdown file for every HTML file now..
+  local working_dir = get_base_file_name(config)
   rm_html_files(config)
 
   for section = config.sections.start, config.sections.finish do
-    local section_file_name = "Sections" .. path_separator .. tostring(section) .. ".md"
-    os.execute("rm " .. section_file_name)
+    local section_file_name = working_dir .. path_separator .. tostring(section) .. ".md"
+    os.execute("rm " .. section_file_name:enquote())
   end
 
-  os.execute("rmdir Sections")
-  os.execute("rm \"" .. get_base_file_name(config) .. ".md\"")
+  os.execute("rmdir " .. working_dir:enquote())
+  os.execute("rm " .. (get_base_file_name(config) .. ".md"):enquote())
 end
 
 local execute = {
