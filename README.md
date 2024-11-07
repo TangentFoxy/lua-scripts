@@ -16,6 +16,8 @@ Personally convenient Lua scripts to add to my path.
 - `video-dl.lua`: A few premade command lines for using `yt-dlp` to download what I want quicker.
 
 ### make-epub.lua
+This script is only intended for personal use. Do not use it to infringe on copyright.
+
 The JSON config spec has two major variations ("Book" and "Anthology").
 
 The following is shared:

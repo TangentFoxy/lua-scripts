@@ -19,40 +19,8 @@ Requirements:
 - Lua libraries: htmlparser, dkjson (or compatible)
 - Binaries:      pandoc, curl
 
-Configuration example(s):
-  {
-    "authors": ["Name"],
-    "title": "Book",
-    "base_file_name": "Book",
-    "keywords": ["erotica", "fantasy"],
-    "base_url": "https://www.literotica.com/s/title-ch-",
-    "first_section_url": "https://www.literotica.com/s/title",
-    "sections": {
-      "start": 1,
-      "finish": 4,
-      "naming": "Chapter",
-      "automatic_naming": true
-    },
-    "page_counts": [1, 5, 3, 3]
-  }
-
-  {
-    "authors": ["Name"],
-    "title": "Anthology",
-    "keywords": ["LitErotica", "erotica"],
-    "manually_specified_sections": true,
-    "sections": [
-      "https://www.literotica.com/s/unique-title",
-      "https://www.literotica.com/s/another-title"
-    ],
-    "section_titles": [
-      "Unique Title",
-      "Another Title"
-    ],
-    "page_counts": [5, 2]
-  }
-
-  For an explanation of these examples, see the .lua-files README.
+For how to write a configuration and examples, see the .lua-files README:
+  https://github.com/TangentFoxy/.lua-files
 ]]
 
 local success, utility = pcall(function()
@@ -73,6 +41,9 @@ else
   path_separator = "/"
 end
 
+local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
+local raw_config -- TODO file handling for configs should probably be in the argument parsing portion
+
 -- also checks for errors
 -- TODO make it check for required elements and error if any are missing!
 local function get_config()
@@ -86,7 +57,8 @@ local function get_config()
 
   local file, err = io.open(arg[1], "r")
   if not file then error(err) end
-  config = json.decode(file:read("*a"))
+  raw_config = file:read("*a") -- TODO file handling for configs should probably be in the argument parsing portion
+  config = json.decode(raw_config)
   file:close()
 
   -- authors wasn't being loaded correctly and I accidentally fixed it while trying to find what was wrong..
@@ -286,6 +258,7 @@ local function write_markdown_file(config)
   local markdown_file, err = io.open(get_base_file_name(config) .. ".md", "w")
   if not markdown_file then error(err) end
   markdown_file:write(format_metadata(config))
+  markdown_file:write(copyright_warning)
 
   for section = config.sections.start, config.sections.finish do
     if config.sections.naming then
@@ -302,6 +275,10 @@ local function write_markdown_file(config)
     section_file:close()
   end
 
+  markdown_file:write("# Ebook Creation Metadata\n\n")
+  markdown_file:write(copyright_warning)
+  markdown_file:write("This ebook was created using the following config:\n\n")
+  markdown_file:write("```json\n" .. raw_config .. "\n```\n")
   markdown_file:close()
 end
 
