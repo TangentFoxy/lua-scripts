@@ -18,6 +18,30 @@ Personally convenient Lua scripts to add to my path.
 ### make-epub.lua
 This script is only intended for personal use. Do not use it to infringe on copyright.
 
+```
+Usage:
+
+  make-epub.lua <config (JSON file)> [action]
+
+If "." is used instead of a JSON file, every JSON file in the current directory
+will be used to make multiple ebooks back-to-back.
+
+[action]: If not specified, all steps will be taken in order (except cleanall).
+            download:  All pages will be downloaded to their own HTML files.
+            convert:   Each page is converted to Markdown.
+            concat:    A file is created for each section out of its pages.
+            markdown:  Metadata frontmatter and Markdown section files will be
+                       concatenated into a single Markdown file.
+            epub:      Markdown file will be converted to an ePub using pandoc.
+            cleanpage: All page files will be deleted, along with their extra
+                       directories.
+            cleanall:  Deletes everything except the config file and ePub.
+
+Requirements:
+- Lua libraries: htmlparser, dkjson (or compatible)
+- Binaries:      pandoc, curl
+```
+
 The JSON config spec has two major variations ("Book" and "Anthology").
 
 The following is shared:

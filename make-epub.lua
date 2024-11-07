@@ -4,16 +4,19 @@ local help = [[Usage:
 
   make-epub.lua <config (JSON file)> [action]
 
-[action]: If not specified, all steps will be taken in order (except clean*).
+If "." is used instead of a JSON file, every JSON file in the current directory
+will be used to make multiple ebooks back-to-back.
+
+[action]: If not specified, all steps will be taken in order (except cleanall).
             download:  All pages will be downloaded to their own HTML files.
             convert:   Each page is converted to Markdown.
             concat:    A file is created for each section out of its pages.
             markdown:  Metadata frontmatter and Markdown section files will be
                        concatenated into a single Markdown file.
             epub:      Markdown file will be converted to an ePub using pandoc.
-            cleanhtml: All HTML files will be deleted, along with their extra
+            cleanpage: All page files will be deleted, along with their extra
                        directories.
-            cleanall:  Deletes everything except the ePub.
+            cleanall:  Deletes everything except the config file and ePub.
 
 Requirements:
 - Lua libraries: htmlparser, dkjson (or compatible)
@@ -269,33 +272,20 @@ local function make_epub(config)
   os.execute("pandoc --from markdown --to epub " .. (base_file_name .. ".md"):enquote() .. " -o " .. (output_dir .. path_separator .. base_file_name .. ".epub"):enquote() .. " --toc=true")
 end
 
-local function rm_html_files(config)
+local function rm_page_files(config)
   local working_dir = get_base_file_name(config)
   os.execute("sleep 1") -- attempt to fix #14
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = working_dir .. path_separator .. tostring(section)
-    os.execute("rm " .. (section_dir .. ".html"):enquote())
-
-    for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-      os.execute("rm " .. (section_dir .. path_separator .. page .. ".html"):enquote())
-    end
-
-    os.execute("rmdir " .. section_dir:enquote()) -- NOTE this is no longer possible due to Markdown versions of each page existing
+    os.execute(utility.recursive_remove_command .. section_dir:enquote())
   end
 end
 
 local function rm_all(config)
-  -- TODO use structure of rm_html_files because there's a Markdown file for every HTML file now..
   local working_dir = get_base_file_name(config)
-  rm_html_files(config)
 
-  for section = config.sections.start, config.sections.finish do
-    local section_file_name = working_dir .. path_separator .. tostring(section) .. ".md"
-    os.execute("rm " .. section_file_name:enquote())
-  end
-
-  os.execute("rmdir " .. working_dir:enquote())
+  os.execute(utility.recursive_remove_command .. working_dir:enquote())
   os.execute("rm " .. (get_base_file_name(config) .. ".md"):enquote())
 end
 
@@ -327,7 +317,7 @@ local function main(arguments)
     concat = concatenate_pages,
     markdown = write_markdown_file,
     epub = make_epub,
-    cleanhtml = rm_html_files,
+    cleanpage = rm_page_files,
     cleanall = rm_all,
   }
 
@@ -345,12 +335,12 @@ local function main(arguments)
     convert_pages(config)
     print("\nConcatenating pages...\n")
     concatenate_pages(config)
+    print("\nRemoving page files...\n")
+    rm_page_files(config)
     print("\nWriting Markdown file...\n")
     write_markdown_file(config)
     print("\nMaking ePub...\n")
     make_epub(config)
-    -- print("\nRemoving HTML files...\n")
-    -- rm_html_files(config)
     print("\nDone!\n")
   end
 end
