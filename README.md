@@ -21,6 +21,7 @@ The JSON config spec has two major variations ("Book" and "Anthology").
 The following is shared:
 - `authors`: (Optional) Array of Strings: Author names. First in the list is used as a byline in the final output. (Legacy: An `author` string works as well. If this exists, it will be first.)
 - `title`: (Optional) String: Title of book.
+- `base_file_name`: (Optional) String: Alternate final file name. (Default: "`title` by `author`" or just "`title`".)
 - `keywords`: Array of Strings: Keywords/Tags. (I'm not sure what the difference is in the final output so it goes in both.)
 - `sections`: \! See "Book"/"Anthology" variations. (I call LitErotica's stories sections - because they are often part of a larger whole.)
 - `page_counts`: Array of Integers: The number of pages on LitErotica per "story". (I call them sections because this script was made to put together story series originally.)
@@ -39,6 +40,7 @@ Example:
 {
   "authors": ["Name"],
   "title": "Book",
+  "base_file_name": "Book",
   "keywords": ["erotica", "fantasy"],
   "base_url": "https://www.literotica.com/s/title-ch-",
   "first_section_url": "https://www.literotica.com/s/title",

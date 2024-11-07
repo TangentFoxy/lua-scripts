@@ -23,6 +23,7 @@ Configuration example(s):
   {
     "authors": ["Name"],
     "title": "Book",
+    "base_file_name": "Book",
     "keywords": ["erotica", "fantasy"],
     "base_url": "https://www.literotica.com/s/title-ch-",
     "first_section_url": "https://www.literotica.com/s/title",
@@ -269,7 +270,7 @@ local function get_base_file_name(config)
     base_file_name = "Book"
   end
 
-  return make_safe_file_name(base_file_name)
+  return make_safe_file_name(config.base_file_name or base_file_name)
 end
 
 -- NOTE deprecated (order of operations had to be changed, see #25)
