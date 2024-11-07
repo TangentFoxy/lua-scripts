@@ -32,6 +32,7 @@ The following is shared:
   - `start`: (Optional) Number: Where to start. (`1` is the default, since it is the most common.)
   - `finish`: Number: Where to end.
   - `naming`: (Optional) String: How to name sections in the final output. The result is `[naming] [#]` (using section numbers). If not specified, there will be no Table of Contents.
+  - `automatic_naming`: (Optional) Boolean: If any line matches "Prologue" or "Chapter #" (any number), it will be made into a heading. (Note: This does not override `naming`. Both can be used together.)
 
 Example:
 ```json

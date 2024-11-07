@@ -223,7 +223,25 @@ local function concatenate_pages(config)
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
       local page_file, err = io.open(section_dir .. page .. ".md", "r")
       if not page_file then error(err) end
-      section_file:write(page_file:read("*a") .. "\n") -- the \n probably isn't needed, but does guarantee safety..
+      if config.sections.automatic_naming then
+        local naming_patterns = {
+          "^Prologue$",
+          "^Chapter %d+$",
+        }
+        local line = page_file:read("*line")
+        while line do
+          for _, pattern in ipairs(naming_patterns) do
+            if line:find(pattern) then
+              line = "# " .. line
+            end
+          end
+          section_file:write(line .. "\n")
+          line = page_file:read("*line")
+        end
+      else
+        section_file:write(page_file:read("*a"))
+      end
+      section_file:write("\n") -- guarantees no accidental line collisions
       page_file:close()
     end
   end
