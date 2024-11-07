@@ -45,7 +45,8 @@ Example:
   "sections": {
     "start": 1,
     "finish": 4,
-    "naming": "Chapter"
+    "naming": "Chapter",
+    "automatic_naming": true
   },
   "page_counts": [1, 5, 3, 3]
 }

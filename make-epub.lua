@@ -29,7 +29,8 @@ Configuration example(s):
     "sections": {
       "start": 1,
       "finish": 4,
-      "naming": "Chapter"
+      "naming": "Chapter",
+      "automatic_naming": true
     },
     "page_counts": [1, 5, 3, 3]
   }
@@ -94,15 +95,15 @@ local function get_config()
   -- print("config done")
 
   if not config.authors then
-    config.authors = {} -- at least have an empty table so it doesn't error below
-  end
-
-  if config.author then -- old style single author will be prepended to authors list
-    table.insert(config.authors, 1, config.author)
+    config.authors = {} -- at least have an empty table so it doesn't error below TODO verify that this is actually true
   end
 
   if not config.keywords then
     config.keywords = {} -- TODO test if it will work empty
+  end
+
+  if config.author then -- old style single author will be prepended to authors list
+    table.insert(config.authors, 1, config.author)
   end
 
   -- detecting manually specified sections and flagging it to the rest of the script
