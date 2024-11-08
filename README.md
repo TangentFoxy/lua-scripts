@@ -49,6 +49,7 @@ The following is shared:
 - `base_file_name`: (Optional) String: Alternate final file name. (Default: "`title` by `author`" or just "`title`".)
 - `keywords`: Array of Strings: Keywords/Tags. (I'm not sure what the difference is in the final output so it goes in both.)
 - `sections`: **See "Book"/"Anthology" variations.** (I call LitErotica's stories sections - because they are often part of a larger whole.)
+- `section_titles`: (Optional) Array of Strings: The titles to be used for Table of Contents / headings. (If `sections.naming` is specified, `section_titles` will be ignored.)
 - `page_counts`: Array of Integers: The number of pages on LitErotica per "story". (I call them sections because this script was made to put together story series originally.)
 
 #### Variation: Book
@@ -82,7 +83,7 @@ Example:
 #### Variation: Anthology
 - `manually_specified_sections`: (Optional) Boolean, must be `true`. Technically not required as the script is capable of figuring out you are using this variation, but *should be* included.
 - `sections`: Array of Strings: A complete URL for each story.
-- `section_titles`: (Optional) Array of Strings: The titles to be used for Table of Contents / headings. (Must be in the same order as `sections`.)
+- `section_titles`: (**Required**) Array of Strings: The titles to be used for Table of Contents / headings. (Must be in the same order as `sections`.)
 
 Example:
 ```json

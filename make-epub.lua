@@ -212,6 +212,7 @@ local function concatenate_pages(config)
         local naming_patterns = {
           "^Prologue$",
           "^Chapter %d+$",
+          "^%*%*CHAPTER ",
         }
         local line = page_file:read("*line")
         while line do
