@@ -229,12 +229,12 @@ local function concatenate_pages(config)
       section_file:write("\n") -- guarantees no accidental line collisions
       page_file:close()
     end
+    section_file:close()
   end
 end
 
 local function write_markdown_file(config)
   local working_dir = get_base_file_name(config)
-  os.execute("sleep 1") -- fix race condition from the previous command
 
   local markdown_file, err = io.open(get_base_file_name(config) .. ".md", "w")
   if not markdown_file then error(err) end
@@ -256,7 +256,7 @@ local function write_markdown_file(config)
     section_file:close()
   end
 
-  markdown_file:write("# Ebook Creation Metadata\n\n")
+  markdown_file:write("\n\n# Ebook Creation Metadata\n\n")
   markdown_file:write(copyright_warning)
   markdown_file:write("This ebook was created using the following config:\n\n")
   markdown_file:write("```json\n" .. config.config_file_text .. "\n```\n")
