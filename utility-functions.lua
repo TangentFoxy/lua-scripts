@@ -135,11 +135,10 @@ utility.open = function(file_name, mode, custom_error_message)
   return function(fn)
     local success, result_or_error = pcall(function() return fn(file) end)
     file:close()
-    if success then
-      return result_or_error
-    else
-      error(result_or_error)
+    if not success then
+      error(result_or_error) -- custom_error_message is only for when the file doesn't exist, this function should not hide *your* errors
     end
+    return result_or_error
   end
 end
 
