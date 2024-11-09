@@ -84,7 +84,6 @@ local function load_config(config_file_text)
 end
 
 local function format_metadata(config)
-  -- TODO use enquote
   local function stringify_list(list)
     local output = utility.escape_quotes(list[1]):enquote()
     for i = 2, #list do
@@ -275,7 +274,6 @@ end
 
 local function rm_page_files(config)
   local working_dir = get_base_file_name(config)
-  os.execute("sleep 1") -- fix #14 race condition from the previous command
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = working_dir .. path_separator .. tostring(section)
