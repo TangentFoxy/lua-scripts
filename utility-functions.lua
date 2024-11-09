@@ -100,6 +100,17 @@ utility.tmp_file_name = function()
   return "." .. utility.uuid() .. ".tmp"
 end
 
+-- io.open, but errors are immediately thrown, and the file is closed for you
+utility.open = function(file_name, mode, custom_error_message)
+  local file, err = io.open(file_name, mode)
+  if not file then error(custom_error_message or err) end
+  return function(fn)
+    local result = fn(file)
+    file:close()
+    return result
+  end
+end
+
 utility.escape_quotes = function(input)
   -- the order of these commands is important and must be preserved
   input = input:gsub("\\", "\\\\")

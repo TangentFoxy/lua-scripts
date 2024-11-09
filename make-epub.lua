@@ -162,21 +162,19 @@ local function download_pages(config)
       local temporary_html_file_name = utility.tmp_file_name()
       os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
 
-      local html_file, err = io.open(temporary_html_file_name, "r")
-      if not html_file then error("Could not download " .. download_url:enquote()) end
-      local raw_html = html_file:read("*a")
-      html_file:close()
+      utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(html_file)
+        local raw_html = html_file:read("*all")
+
+        local parser = htmlparser.parse(raw_html)
+        local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
+        local text = content_tag[1]:getcontent()
+
+        utility.open(section_dir .. page .. ".html", "w")(function(page_file)
+          page_file:write(text .. "\n")
+        end)
+      end)
+
       os.execute("rm " .. temporary_html_file_name)
-
-      local parser = htmlparser.parse(raw_html)
-      local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
-      local text = content_tag[1]:getcontent()
-
-      local page_file, err = io.open(section_dir .. page .. ".html", "w")
-      if not page_file then error(err) end
-      page_file:write(text .. "\n")
-      page_file:close()
-
       os.execute("sleep " .. tostring(math.random(5))) -- avoid rate limiting
     end
   end
@@ -201,66 +199,61 @@ local function concatenate_pages(config)
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
-    local section_file, err = io.open(working_dir .. path_separator .. tostring(section) .. ".md", "w")
-    if not section_file then error(err) end
-
-    for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-      local page_file, err = io.open(section_dir .. page .. ".md", "r")
-      if not page_file then error(err) end
-      if config.sections.automatic_naming then
-        local naming_patterns = {
-          "^Prologue$",
-          "^Chapter %d+$",
-          "^%*%*CHAPTER ",
-        }
-        local line = page_file:read("*line")
-        while line do
-          for _, pattern in ipairs(naming_patterns) do
-            if line:find(pattern) then
-              line = "# " .. line
+    utility.open(working_dir .. path_separator .. tostring(section) .. ".md", "w")(function(section_file)
+      for page = 1, config.page_counts[section - (config.sections.start - 1)] do
+        utility.open(section_dir .. page .. ".md", "r")(function(page_file)
+          if config.sections.automatic_naming then
+            local naming_patterns = {
+              "^Prologue$",
+              "^Chapter %d+$",
+              "^%*%*CHAPTER ",
+            }
+            local line = page_file:read("*line")
+            while line do
+              for _, pattern in ipairs(naming_patterns) do
+                if line:find(pattern) then
+                  line = "# " .. line
+                end
+              end
+              section_file:write(line .. "\n")
+              line = page_file:read("*line")
             end
+          else
+            section_file:write(page_file:read("*all"))
           end
-          section_file:write(line .. "\n")
-          line = page_file:read("*line")
-        end
-      else
-        section_file:write(page_file:read("*a"))
+          section_file:write("\n") -- guarantees no accidental line collisions
+        end)
       end
-      section_file:write("\n") -- guarantees no accidental line collisions
-      page_file:close()
-    end
-    section_file:close()
+    end)
   end
 end
 
 local function write_markdown_file(config)
   local working_dir = get_base_file_name(config)
 
-  local markdown_file, err = io.open(get_base_file_name(config) .. ".md", "w")
-  if not markdown_file then error(err) end
-  markdown_file:write(format_metadata(config))
-  markdown_file:write(copyright_warning)
+  utility.open(get_base_file_name(config) .. ".md", "w")(function(markdown_file)
+    markdown_file:write(format_metadata(config))
+    markdown_file:write(copyright_warning)
 
-  for section = config.sections.start, config.sections.finish do
-    if config.sections.naming then
-      markdown_file:write("\n\n# " .. config.sections.naming .. " " .. tostring(section))
-    elseif config.section_titles then
-      markdown_file:write("\n\n# " .. config.section_titles[section])
+    for section = config.sections.start, config.sections.finish do
+      if config.sections.naming then
+        markdown_file:write("\n\n# " .. config.sections.naming .. " " .. tostring(section))
+      elseif config.section_titles then
+        markdown_file:write("\n\n# " .. config.section_titles[section])
+      end
+      markdown_file:write("\n\n")
+
+      local section_file_name = working_dir .. path_separator .. tostring(section)
+      utility.open(section_file_name .. ".md", "r")(function(section_file)
+        markdown_file:write(section_file:read("*all"))
+      end)
     end
-    markdown_file:write("\n\n")
 
-    local section_file_name = working_dir .. path_separator .. tostring(section)
-    local section_file, err = io.open(section_file_name .. ".md", "r")
-    if not section_file then error(err) end
-    markdown_file:write(section_file:read("*a"))
-    section_file:close()
-  end
-
-  markdown_file:write("\n\n# Ebook Creation Metadata\n\n")
-  markdown_file:write(copyright_warning)
-  markdown_file:write("This ebook was created using the following config:\n\n")
-  markdown_file:write("```json\n" .. config.config_file_text .. "\n```\n")
-  markdown_file:close()
+    markdown_file:write("\n\n# Ebook Creation Metadata\n\n")
+    markdown_file:write(copyright_warning)
+    markdown_file:write("This ebook was created using the following config:\n\n")
+    markdown_file:write("```json\n" .. config.config_file_text .. "\n```\n")
+  end)
 end
 
 local function make_epub(config)
@@ -305,10 +298,9 @@ local function argparse(arguments, positional_arguments)
 end
 
 local function main(arguments)
-  local config_file, err = io.open(arguments.json_file_name, "r")
-  if not config_file then error(err) end
-  local config = load_config(config_file:read("*all"))
-  config_file:close()
+  local config = utility.open(arguments.json_file_name, "r")(function(config_file)
+    return load_config(config_file:read("*all"))
+  end)
 
   local actions = {
     download = download_pages,
