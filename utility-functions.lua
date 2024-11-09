@@ -133,9 +133,13 @@ utility.open = function(file_name, mode, custom_error_message)
   local file, err = io.open(file_name, mode)
   if not file then error(custom_error_message or err) end
   return function(fn)
-    local result = fn(file)
+    local success, result_or_error = pcall(function() return fn(file) end)
     file:close()
-    return result
+    if success then
+      return result_or_error
+    else
+      error(result_or_error)
+    end
   end
 end
 
