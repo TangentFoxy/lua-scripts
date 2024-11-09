@@ -59,6 +59,26 @@ function string.enquote(s)
   return "\"" .. s .. "\""
 end
 
+local function escape_special_characters(s)
+  local special_characters = "[()%%.[^$%]*+%-?]"
+  if s == nil then return end
+  return (s:gsub(special_characters, "%%%1"))
+end
+
+function string.gsplit(s, delimiter)
+  delimiter = delimiter or ","
+  if s:sub(-#delimiter) ~= delimiter then s = s .. delimiter end
+  return s:gmatch("(.-)" .. escape_special_characters(delimiter))
+end
+
+function string.split(s, delimiter)
+  local result = {}
+  for item in s:gsplit(delimiter) do
+    result[#result + 1] = item
+  end
+  return result
+end
+
 utility.require = function(name)
   local success, package_or_err = pcall(function()
     return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. name .. ".lua")

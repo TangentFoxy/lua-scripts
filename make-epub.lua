@@ -227,6 +227,29 @@ local function write_markdown_file(config)
         markdown_file:write("\n\n# " .. config.sections.naming .. " " .. tostring(section))
       elseif config.section_titles then
         markdown_file:write("\n\n# " .. config.section_titles[section])
+      elseif config.lazy_titling then
+        local section_url
+        if section == 1 and config.first_section_url then
+          section_url = config.first_section_url
+        else
+          section_url = config.base_url
+        end
+        if config.manually_specified_sections then
+          section_url = config.sections[section]
+        end
+
+        local title_parts = section_url:sub(30):gsplit("-")
+        while tonumber(title_parts[#title_parts]) do
+          title_parts[#title_parts] = nil
+        end
+        local last_part = title_parts[#title_parts]
+        if last_part == "ch" or last_part == "pt" then
+          title_parts[#title_parts] = nil
+        end
+        for index, part in ipairs(title_parts) do
+          title_parts[index] = part:sub(1, 1):upper() .. part:sub(2)
+        end
+        markdown_file:write("\n\n# " .. table.concat(title_parts, " "))
       end
       markdown_file:write("\n\n")
 

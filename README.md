@@ -50,6 +50,7 @@ The following is shared:
 - `keywords`: Array of Strings: Keywords/Tags. (I'm not sure what the difference is in the final output so it goes in both.)
 - `sections`: **See "Book"/"Anthology" variations.** (I call LitErotica's stories sections - because they are often part of a larger whole.)
 - `section_titles`: (Optional) Array of Strings: The titles to be used for Table of Contents / headings. (If `sections.naming` is specified, `section_titles` will be ignored.)
+- `lazy_titling`: (Optional) Boolean: URLs will be used to generate section titles. (Warning: This process is likely to create janky titles.)
 - `page_counts`: Array of Integers: The number of pages on LitErotica per "story". (I call them sections because this script was made to put together story series originally.)
 
 #### Variation: Book
@@ -59,7 +60,7 @@ The following is shared:
   - `start`: (Optional) Number: Where to start. (`1` is the default, since it is the most common.)
   - `finish`: Number: Where to end.
   - `naming`: (Optional) String: How to name sections in the final output. The result is `[naming] [#]` (using section numbers). (If not specified, sections will not have headings.)
-  - `automatic_naming`: (Optional) Boolean: If any line matches "Prologue" or "Chapter #" (any number), it will be made into a heading. (Note: This does not override `naming`. Both can be used together.)
+  - `automatic_naming`: (Optional) Boolean: If any line matches "Prologue" or "Chapter #" (any number), it will be made into a heading. (Note: This does not override `naming`. Both can be used together.) (Other patterns will be added as I find them.)
 
 Example:
 ```json
