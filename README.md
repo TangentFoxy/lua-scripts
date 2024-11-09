@@ -50,7 +50,8 @@ The following is shared:
 - `keywords`: Array of Strings: Keywords/Tags. (I'm not sure what the difference is in the final output so it goes in both.)
 - `sections`: **See "Book"/"Anthology" variations.** (I call LitErotica's stories sections - because they are often part of a larger whole.)
 - `section_titles`: (Optional) Array of Strings: The titles to be used for Table of Contents / headings. (If `sections.naming` is specified, `section_titles` will be ignored.)
-- `lazy_titling`: (Optional) Boolean: URLs will be used to generate section titles. (Warning: This process is likely to create janky titles.)
+- `extract_titles`: (Optional) Boolean: Titles will be extracted from the first page of every section. (Note: This is compatible with `sections.automatic_naming`, but it can create repeated titles.)
+- `lazy_titling`: (Optional) Boolean: URLs will be used to generate section titles. (Warning: This process is likely to create janky titles. Note: This is compatible with `sections.automatic_naming`, but it can create repeated titles.)
 - `page_counts`: Array of Integers: The number of pages on LitErotica per "story". (I call them sections because this script was made to put together story series originally.)
 
 #### Variation: Book

@@ -156,6 +156,10 @@ local function download_pages(config)
         local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
         local text = content_tag[1]:getcontent()
 
+        if page == 1 and config.extract_titles then
+          text = parser:select(".headline")[1]:gettext() .. text
+        end
+
         utility.open(section_dir .. page .. ".html", "w")(function(page_file)
           page_file:write(text .. "\n")
         end)
