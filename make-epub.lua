@@ -80,6 +80,17 @@ local function load_config(config_file_text)
     error("Number of section_titles does not match number of sections.")
   end
 
+  local base_file_name
+  if config.title and config.authors[1] then
+    -- first author in list gets top billing (this is problematic in anthologies unless an editor is the first entry)
+    base_file_name = config.title .. " by " .. config.authors[1]
+  elseif config.title then
+    base_file_name = config.title
+  else
+    base_file_name = "Book"
+  end
+  config.base_file_name = utility.make_safe_file_name(config.base_file_name or base_file_name)
+
   return config
 end
 
@@ -106,34 +117,10 @@ local function format_metadata(config)
   return table.concat(metadata, "\n") .. "\n"
 end
 
--- TODO since this is called many times across the program, make load_config SET this within the config and use that instead!
-local function get_base_file_name(config)
-  -- TODO move make_safe_file_name to utility
-  local function make_safe_file_name(file_name)
-    file_name = file_name:gsub("[%\"%:%\\%!%@%#%$%%%^%*%=%{%}%|%;%<%>%?%/]", "") -- everything except the &
-    file_name = file_name:gsub(" %&", ",")   -- replacing & with a comma works for 99% of things
-    file_name = file_name:gsub("%&", ",")    -- replacing & with a comma works for 99% of things
-    file_name = file_name:gsub("[%s+]", " ") -- more than one space in succession should be a single space
-    return file_name
-  end
-
-  local base_file_name
-  if config.title and config.authors[1] then
-    -- first author in list gets top billing (this is problematic in anthologies unless an editor is the first entry)
-    base_file_name = config.title .. " by " .. config.authors[1]
-  elseif config.title then
-    base_file_name = config.title
-  else
-    base_file_name = "Book"
-  end
-
-  return make_safe_file_name(config.base_file_name or base_file_name)
-end
-
 local function download_pages(config)
   local htmlparser = utility.require("htmlparser")
   utility.required_program("curl")
-  local working_dir = get_base_file_name(config)
+  local working_dir = config.base_file_name
 
   os.execute("mkdir " .. working_dir:enquote())
   for section = config.sections.start, config.sections.finish do
@@ -182,7 +169,7 @@ end
 
 local function convert_pages(config)
   utility.required_program("pandoc")
-  local working_dir = get_base_file_name(config)
+  local working_dir = config.base_file_name
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
@@ -195,7 +182,7 @@ local function convert_pages(config)
 end
 
 local function concatenate_pages(config)
-  local working_dir = get_base_file_name(config)
+  local working_dir = config.base_file_name
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
@@ -229,9 +216,9 @@ local function concatenate_pages(config)
 end
 
 local function write_markdown_file(config)
-  local working_dir = get_base_file_name(config)
+  local working_dir = config.base_file_name
 
-  utility.open(get_base_file_name(config) .. ".md", "w")(function(markdown_file)
+  utility.open(config.base_file_name .. ".md", "w")(function(markdown_file)
     markdown_file:write(format_metadata(config))
     markdown_file:write(copyright_warning)
 
@@ -261,12 +248,13 @@ local function make_epub(config)
   local output_dir = "All ePubs"
   os.execute("mkdir " .. output_dir:enquote())
 
-  local base_file_name = get_base_file_name(config)
-  os.execute("pandoc --from markdown --to epub " .. (base_file_name .. ".md"):enquote() .. " -o " .. (output_dir .. path_separator .. base_file_name .. ".epub"):enquote() .. " --toc=true")
+  local markdown_file_name = config.base_file_name .. ".md"
+  local epub_file_name = output_dir .. path_separator .. config.base_file_name .. ".epub"
+  os.execute("pandoc --from markdown --to epub " .. markdown_file_name:enquote() .. " -o " .. epub_file_name:enquote() .. " --toc=true")
 end
 
 local function rm_page_files(config)
-  local working_dir = get_base_file_name(config)
+  local working_dir = config.base_file_name
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = working_dir .. path_separator .. tostring(section)
@@ -275,10 +263,10 @@ local function rm_page_files(config)
 end
 
 local function rm_all(config)
-  local working_dir = get_base_file_name(config)
+  local working_dir = config.base_file_name
 
   os.execute(utility.recursive_remove_command .. working_dir:enquote())
-  os.execute("rm " .. (get_base_file_name(config) .. ".md"):enquote())
+  os.execute("rm " .. (config.base_file_name .. ".md"):enquote())
 end
 
 local function argparse(arguments, positional_arguments)

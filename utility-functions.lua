@@ -100,6 +100,14 @@ utility.tmp_file_name = function()
   return "." .. utility.uuid() .. ".tmp"
 end
 
+utility.make_safe_file_name = function(file_name)
+  file_name = file_name:gsub("[%\"%:%\\%!%@%#%$%%%^%*%=%{%}%|%;%<%>%?%/]", "") -- everything except the &
+  file_name = file_name:gsub(" %&", ",")   -- replacing & with a comma works for 99% of things
+  file_name = file_name:gsub("%&", ",")    -- replacing & with a comma works for 99% of things
+  file_name = file_name:gsub("[%s+]", " ") -- more than one space in succession should be a single space
+  return file_name
+end
+
 -- io.open, but errors are immediately thrown, and the file is closed for you
 utility.open = function(file_name, mode, custom_error_message)
   local file, err = io.open(file_name, mode)
