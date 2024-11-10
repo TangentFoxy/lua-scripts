@@ -37,18 +37,22 @@ else
   -- "--file" is handled just before execution
 end
 
+local core_command = "yt-dlp --retries 100 "
+local metadata_options = "--write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description "
+local quality_ceiling_720 = "-f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" "
+
 local execute = {
   backup = function(url)
-    os.execute("yt-dlp --retries 100 --write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description -f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" \"" .. url .."\"")
+    os.execute(core_command .. metadata_options .. quality_ceiling_720 .. url:enquote())
   end,
   music = function(url)
-    os.execute("yt-dlp --retries 100 -x --audio-quality 0 \"" .. url .."\"")
+    os.execute(core_command .. "-x --audio-quality 0 " .. url:enquote())
   end,
   metadata = function(url)
-    os.execute("yt-dlp --retries 100 --write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description --skip-download \"" .. url .."\"")
+    os.execute(core_command .. metadata_options .. "--skip-download " .. url:enquote())
   end,
   video = function(url)
-    os.execute("yt-dlp --retries 100 -f \"bestvideo[height<=720]+bestaudio/best[height<=720]\" \"" .. url .. "\"")
+    os.execute(core_command .. quality_ceiling_720 .. url:enquote())
   end,
 }
 execute.clone = execute.backup
