@@ -63,6 +63,10 @@ local function load_config(config_file_text)
     config.base_url = config.first_section_url -- prevent errors due to required item being missing
   end
 
+  if not config.sections then
+    config.sections = {} -- I've decided to allow empty sections (defaults to 1 section, for single story ebooks)
+  end
+
   -- detecting manually specified sections and flagging it to the rest of the script
   if config.sections[1] then
     config.sections.start = 1
@@ -73,6 +77,10 @@ local function load_config(config_file_text)
 
   if not config.sections.start then
     config.sections.start = 1 -- the first one can be optional since the common use case is ALL OF THEM
+  end
+
+  if not config.sections.finish then
+    config.sections.finish = 1
   end
 
   if #config.page_counts ~= config.sections.finish - config.sections.start + 1 then
@@ -352,7 +360,7 @@ local function main(arguments)
         local starting_point_reached = false
         for _, action in ipairs(default_action_order) do
           if starting_point_reached then
-            action(config)
+            actions[action](config)
           elseif action == arguments.action then
             starting_point_reached = true
           end
@@ -364,7 +372,7 @@ local function main(arguments)
     end
   else
     for _, action in ipairs(default_action_order) do
-      action(config)
+      actions[action](config)
     end
   end
   print("\nDone!\n")
