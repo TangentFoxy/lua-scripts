@@ -2,7 +2,7 @@
 
 local help = [[Usage:
 
-  make-epub.lua <config (JSON file)> [action]
+  make-epub.lua <config (JSON file)> [action] [flag]
 
 If "." is used instead of a JSON file, every JSON file in the current directory
 will be used to make multiple ebooks back-to-back.
@@ -17,6 +17,9 @@ will be used to make multiple ebooks back-to-back.
             cleanpage: All page files will be deleted, along with their extra
                        directories.
             cleanall:  Deletes everything except the config file and ePub.
+
+[flag]: If "--continue" is passed, script will continue with the default order
+          of actions from the action specified.
 
 Requirements:
 - Binaries:      pandoc, curl
@@ -118,6 +121,7 @@ local function format_metadata(config)
 end
 
 local function download_pages(config)
+  print("\nDownloading pages...\n")
   local htmlparser = utility.require("htmlparser")
   utility.required_program("curl")
   local working_dir = config.base_file_name
@@ -172,6 +176,7 @@ local function download_pages(config)
 end
 
 local function convert_pages(config)
+  print("\nConverting pages...\n")
   utility.required_program("pandoc")
   local working_dir = config.base_file_name
 
@@ -186,6 +191,7 @@ local function convert_pages(config)
 end
 
 local function concatenate_pages(config)
+  print("\nConcatenating pages...\n")
   local working_dir = config.base_file_name
 
   for section = config.sections.start, config.sections.finish do
@@ -220,6 +226,7 @@ local function concatenate_pages(config)
 end
 
 local function write_markdown_file(config)
+  print("\nWriting Markdown file...\n")
   local working_dir = config.base_file_name
 
   utility.open(config.base_file_name .. ".md", "w")(function(markdown_file)
@@ -271,6 +278,7 @@ local function write_markdown_file(config)
 end
 
 local function make_epub(config)
+  print("\nMaking ePub...\n")
   utility.required_program("pandoc")
   local output_dir = "All ePubs"
   os.execute("mkdir " .. output_dir:enquote())
@@ -281,6 +289,7 @@ local function make_epub(config)
 end
 
 local function rm_page_files(config)
+  print("\nRemoving page files...\n")
   local working_dir = config.base_file_name
 
   for section = config.sections.start, config.sections.finish do
@@ -290,6 +299,7 @@ local function rm_page_files(config)
 end
 
 local function rm_all(config)
+  print("\nRemoving all extra files...\n")
   local working_dir = config.base_file_name
 
   os.execute(utility.recursive_remove_command .. working_dir:enquote())
@@ -326,32 +336,41 @@ local function main(arguments)
     cleanpage = rm_page_files,
     cleanall = rm_all,
   }
+  local default_action_order = {
+    "download",
+    "convert",
+    "concat",
+    "cleanpage",
+    "markdown",
+    "epub",
+  }
 
   if arguments.action then
     if actions[arguments.action] then
       actions[arguments.action](config)
+      if arguments.flag == "--continue" then
+        local starting_point_reached = false
+        for _, action in ipairs(default_action_order) do
+          if starting_point_reached then
+            action(config)
+          elseif action == arguments.action then
+            starting_point_reached = true
+          end
+        end
+      end
     else
       print(help)
       error("\nInvalid action specified.")
     end
   else
-    print("\nDownloading pages...\n")
-    download_pages(config)
-    print("\nConverting pages...\n")
-    convert_pages(config)
-    print("\nConcatenating pages...\n")
-    concatenate_pages(config)
-    print("\nRemoving page files...\n")
-    rm_page_files(config)
-    print("\nWriting Markdown file...\n")
-    write_markdown_file(config)
-    print("\nMaking ePub...\n")
-    make_epub(config)
-    print("\nDone!\n")
+    for _, action in ipairs(default_action_order) do
+      action(config)
+    end
   end
+  print("\nDone!\n")
 end
 
-local positional_arguments = {"json_file_name", "action"}
+local positional_arguments = {"json_file_name", "action", "flag"}
 local arguments = argparse(arg, positional_arguments)
 if not arguments.json_file_name then
   print(help)

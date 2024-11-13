@@ -37,6 +37,9 @@ will be used to make multiple ebooks back-to-back.
                        directories.
             cleanall:  Deletes everything except the config file and ePub.
 
+[flag]: If "--continue" is passed, script will continue with the default order
+          of actions from the action specified.
+
 Requirements:
 - Binaries:      pandoc, curl
 ```
