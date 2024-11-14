@@ -37,7 +37,7 @@ if not success then
 end
 
 local path_separator = utility.path_separator
-local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
+local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of its copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
 
 -- also checks for errors TODO make it check for ALL required elements and error if any are missing!
 local function load_config(config_file_text)
