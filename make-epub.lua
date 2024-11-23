@@ -125,6 +125,10 @@ local function format_metadata(config)
     "",
   }
 
+  if config.cover_image_path then
+    table.insert(metadata, 6, "cover-image: " .. cover_image_path:enquote())
+  end
+
   return table.concat(metadata, "\n") .. "\n"
 end
 
@@ -295,7 +299,11 @@ local function make_epub(config)
 
   local markdown_file_name = config.base_file_name .. ".md"
   local epub_file_name = output_dir .. path_separator .. config.base_file_name .. ".epub"
-  os.execute("pandoc --from markdown --to epub " .. markdown_file_name:enquote() .. " -o " .. epub_file_name:enquote() .. " --toc=true")
+  local pandoc_command = "pandoc --from markdown --to epub " .. markdown_file_name:enquote() .. " -o " .. epub_file_name:enquote() .. " --toc=true"
+  if config.cover_image_path then
+    pandoc_command = pandoc_command .. " --epub-cover-image=" .. config.cover_image_path:enquote()
+  end
+  os.execute(pandoc_command)
 end
 
 local function rm_page_files(config)
@@ -319,8 +327,8 @@ end
 local function argparse(arguments, positional_arguments)
   local recognized_arguments = {}
   for index, argument in ipairs(arguments) do
-    for _, help in ipairs({"-h", "--help", "/?", "/help", "help"}) do
-      if argument == help then
+    for _, help_command in ipairs({"-h", "--help", "/?", "/help", "help"}) do
+      if argument == help_command then
         print(help)
         return nil
       end
@@ -382,6 +390,7 @@ end
 
 local positional_arguments = {"json_file_name", "action", "flag"}
 local arguments = argparse(arg, positional_arguments)
+if not arguments then return end -- help text must've been printed, exit
 if not arguments.json_file_name then
   print(help)
   error("\nA config file name/path must be specified.")

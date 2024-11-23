@@ -49,6 +49,7 @@ The JSON config spec has two major variations ("Book" and "Anthology").
 The following is shared:
 - `authors`: (Optional) Array of Strings: Author names. First in the list is used as a byline in the final output. (Legacy: An `author` string works as well. If this exists, it will be first.)
 - `title`: (Optional) String: Title of book.
+- `cover_image_path`: (Optional) String: Path to an image to use for the cover. (Due to a bug in Pandoc, this must not contain spaces!)
 - `base_file_name`: (Optional) String: Alternate final file name. (Default: "`title` by `author`" or just "`title`".)
 - `keywords`: Array of Strings: Keywords/Tags. (I'm not sure what the difference is in the final output so it goes in both.)
 - `sections`: **See "Book"/"Anthology" variations.** (I call LitErotica's stories sections - because they are often part of a larger whole.)
