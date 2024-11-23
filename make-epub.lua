@@ -143,7 +143,7 @@ local function download_pages(config)
     if section == 1 and config.first_section_url then
       section_url = config.first_section_url
     else
-      section_url = config.base_url .. string.format("%02i", section) -- leftpad 2 (This will eventually cause problems.)
+      section_url = config.base_url .. string.format("%02i", section) -- leftpad 2 (NOTE: This will eventually cause problems.)
     end
 
     if config.manually_specified_sections then
@@ -212,6 +212,8 @@ local function concatenate_pages(config)
               "^Prologue$",
               "^Chapter %d+$",
               "^%*%*CHAPTER ",
+              "^Epilogue$",
+              "^Epilog$",
             }
             local line = page_file:read("*line")
             while line do
