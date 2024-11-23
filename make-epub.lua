@@ -126,7 +126,7 @@ local function format_metadata(config)
   }
 
   if config.cover_image_path then
-    table.insert(metadata, 6, "cover-image: " .. cover_image_path:enquote())
+    table.insert(metadata, 6, "cover-image: " .. config.cover_image_path:enquote())
   end
 
   return table.concat(metadata, "\n") .. "\n"
