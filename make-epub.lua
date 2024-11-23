@@ -51,7 +51,7 @@ local function load_config(config_file_text)
   end
 
   if not config.keywords then
-    config.keywords = {} -- TODO test if it will work empty
+    config.keywords = {}
   end
 
   if config.author then -- old style single author will be prepended to authors list
@@ -83,12 +83,20 @@ local function load_config(config_file_text)
     config.sections.finish = 1
   end
 
-  if #config.page_counts ~= config.sections.finish - config.sections.start + 1 then
-    error("Number of page_counts does not match number of sections.")
-  end
-
   if config.section_titles and #config.section_titles ~= config.sections.finish - config.sections.start + 1 then
     error("Number of section_titles does not match number of sections.")
+  end
+
+  -- make page_counts optional for single-page downloads
+  if not config.page_counts then
+    config.page_counts = {}
+    for _ = config.sections.start, config.sections.finish do
+      table.insert(config.page_counts, 1)
+    end
+  end
+
+  if #config.page_counts ~= config.sections.finish - config.sections.start + 1 then
+    error("Number of page_counts does not match number of sections.")
   end
 
   local base_file_name
@@ -107,6 +115,7 @@ end
 
 local function format_metadata(config)
   local function stringify_list(list)
+    if not list or not list[1] then return "" end
     local output = utility.escape_quotes(list[1]):enquote()
     for i = 2, #list do
       output = output .. ", " .. utility.escape_quotes(list[i]):enquote()
@@ -168,8 +177,23 @@ local function download_pages(config)
       utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(html_file)
         local raw_html = html_file:read("*all")
 
-        local parser = htmlparser.parse(raw_html)
-        local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
+        local parser = htmlparser.parse(raw_html, 100000)
+        -- NOTE begin very hacky modification
+        local domain_selectors = {
+          ["literotica%.com/s/"] = ".article > div > div",
+          ["archiveofourown%.org/works/"] = "div#workskin",
+        }
+        local content_tag
+        for domain, selector in pairs(domain_selectors) do
+          if download_url:find(domain) then
+            content_tag = parser:select(selector)
+            -- print('\n\nSHOULD BE WORKING\n\n')
+            break
+          end
+        end
+        -- local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
+        -- local content_tag = parser:select("div#workskin")
+        -- NOTE end very hacky modification
         local text = content_tag[1]:getcontent()
 
         if page == 1 and config.extract_titles then

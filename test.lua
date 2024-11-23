@@ -9,13 +9,13 @@ if not success then
 end
 
 local htmlparser = utility.require("htmlparser")
-utility.open("TEST.html", "r")(function(html_file)
+utility.open("test.html", "r")(function(html_file)
   local raw_html = html_file:read("*all")
 
   local parser = htmlparser.parse(raw_html)
-  local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
-  local text = content_tag[1]:getcontent()
+  -- local parser = htmlparser.parse(raw_html, 100000)
+  local content_tag = parser:select("div#workskin")
+  print(content_tag, content_tag[1])
 
-  local title_tag = parser:select(".headline")
-  print(title_tag[1]:gettext())
+  local text = content_tag[1]:getcontent()
 end)
