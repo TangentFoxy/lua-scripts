@@ -39,12 +39,26 @@ end
 local path_separator = utility.path_separator
 local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of its copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
 
+local domain_customizations = {
+  ["literotica%.com/s/"] = {
+    content_selector = ".article > div > div",
+    title_selector = ".headline",
+    conversion_method = "standard",
+  },
+  ["archiveofourown%.org/works/"] = {
+    content_selector = "div#workskin",
+    conversion_method = "plaintext",
+  },
+}
+
 -- also checks for errors TODO make it check for ALL required elements and error if any are missing!
 local function load_config(config_file_text)
   local json = utility.require("json")
 
   config = json.decode(config_file_text)
   config.config_file_text = config_file_text
+
+  -- domain is not detected here, because when manually specifying sections, different sections can come from different domains
 
   if not config.authors then
     config.authors = {} -- at least have an empty table so it doesn't error below TODO verify that this is actually true
@@ -141,6 +155,38 @@ local function format_metadata(config)
   return table.concat(metadata, "\n") .. "\n"
 end
 
+local function get_section_url(config, section)
+  local section_url
+  if section == 1 and config.first_section_url then
+    section_url = config.first_section_url
+  else
+    section_url = config.base_url .. string.format("%02i", section) -- leftpad 2 (NOTE: This will eventually cause problems.)
+  end
+
+  if config.manually_specified_sections then
+    section_url = config.sections[section]
+  end
+
+  return section_url
+end
+
+local function get_current_domain(url)
+  local current_domain
+  for domain_pattern, customizations_table in pairs(domain_customizations) do
+    if url:find(domain_pattern) then
+      current_domain = customizations_table
+      break
+    end
+  end
+
+  -- NOTE/TODO this doesn't allow specifying custom selectors, which should overwrite and ignore this error
+  if not current_domain then
+    error("\nThe domain of " .. section_url:enquote() .. " is not supported.\n")
+  end
+
+  return current_domain
+end
+
 local function download_pages(config)
   print("\nDownloading pages...\n")
   local htmlparser = utility.require("htmlparser")
@@ -152,16 +198,9 @@ local function download_pages(config)
     local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
     os.execute("mkdir " .. section_dir:sub(1, -2):enquote())
 
-    local section_url
-    if section == 1 and config.first_section_url then
-      section_url = config.first_section_url
-    else
-      section_url = config.base_url .. string.format("%02i", section) -- leftpad 2 (NOTE: This will eventually cause problems.)
-    end
-
-    if config.manually_specified_sections then
-      section_url = config.sections[section]
-    end
+    local section_url = get_section_url(config, section)
+    -- domain detected here so that multi-domain parts can be put in the same config
+    local current_domain = get_current_domain(section_url)
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
       local download_url
@@ -178,26 +217,13 @@ local function download_pages(config)
         local raw_html = html_file:read("*all")
 
         local parser = htmlparser.parse(raw_html, 100000)
-        -- NOTE begin very hacky modification
-        local domain_selectors = {
-          ["literotica%.com/s/"] = ".article > div > div",
-          ["archiveofourown%.org/works/"] = "div#workskin",
-        }
-        local content_tag
-        for domain, selector in pairs(domain_selectors) do
-          if download_url:find(domain) then
-            content_tag = parser:select(selector)
-            -- print('\n\nSHOULD BE WORKING\n\n')
-            break
-          end
-        end
-        -- local content_tag = parser:select(".article > div > div") -- TODO add ability to set selector in config!
-        -- local content_tag = parser:select("div#workskin")
-        -- NOTE end very hacky modification
+        local content_tag = parser:select(current_domain.content_selector)
         local text = content_tag[1]:getcontent()
 
         if page == 1 and config.extract_titles then
-          text = parser:select(".headline")[1]:gettext() .. text
+          if current_domain.title_selector then
+            text = parser:select(current_domain.title_selector)[1]:gettext() .. text
+          end
         end
 
         utility.open(section_dir .. page .. ".html", "w")(function(page_file)
@@ -219,9 +245,19 @@ local function convert_pages(config)
   for section = config.sections.start, config.sections.finish do
     local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
 
+    local current_domain = get_current_domain(get_section_url(config, section))
+
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
       local page_file_name_base = section_dir .. page
-      os.execute("pandoc --from html --to markdown " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
+      if current_domain.conversion_method == "standard" then
+        os.execute("pandoc --from html --to markdown " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
+      elseif current_domain.conversion_method == "plaintext" then
+        local plaintext_reader_path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "pandoc_plaintext_reader.lua"
+        os.execute("pandoc --from html --to plain " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".txt"):enquote())
+        os.execute("pandoc --from " .. plaintext_reader_path:enquote() .. " --to markdown " .. (page_file_name_base .. ".txt"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
+      else
+        error("\nInternal Error: Invalid conversion_method. This is an error with make-epub.lua itself. Please report this error.\n")
+      end
     end
   end
 end
@@ -239,6 +275,7 @@ local function concatenate_pages(config)
             local naming_patterns = {
               "^Prologue$",
               "^Chapter %d+$",
+              "^Chapter %d+: [%w%s]+$",
               "^%*%*CHAPTER ",
               "^Epilogue$",
               "^Epilog$",
