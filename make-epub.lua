@@ -41,13 +41,20 @@ local copyright_warning = "This ebook was created by an automated tool for perso
 
 local domain_customizations = {
   ["literotica%.com/s/"] = {
+    name = "literotica.com",
     content_selector = ".article > div > div",
     title_selector = ".headline",
     conversion_method = "standard",
   },
   ["archiveofourown%.org/works/"] = {
+    name = "archiveofourown.org",
     content_selector = "div#workskin",
     conversion_method = "plaintext",
+  },
+  ["fanfiction%.net/s/"] = {
+    name = "fanfiction.net",
+    content_selector = "#storytext",
+    conversion_method = "standard",
   },
 }
 
@@ -204,10 +211,15 @@ local function download_pages(config)
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
       local download_url
-      if page == 1 then
-        download_url = section_url
+      if current_domain.name == "fanfiction.net" then
+        local start, finish = config.base_url:find("/1/")
+        download_url = config.base_url:sub(1, start) .. section .. config.base_url:sub(finish)
       else
-        download_url = section_url .. "?page=" .. tostring(page)
+        if page == 1 then
+          download_url = section_url
+        else
+          download_url = section_url .. "?page=" .. tostring(page)
+        end
       end
 
       local temporary_html_file_name = utility.tmp_file_name()
@@ -314,28 +326,26 @@ local function write_markdown_file(config)
       elseif config.section_titles then
         markdown_file:write("\n\n# " .. config.section_titles[section])
       elseif config.lazy_titling then
-        local section_url
-        if section == 1 and config.first_section_url then
-          section_url = config.first_section_url
-        else
-          section_url = config.base_url
-        end
-        if config.manually_specified_sections then
-          section_url = config.sections[section]
-        end
+        local section_url = get_section_url(config, section)
+        local current_domain = get_current_domain(section_url)
 
-        local title_parts = section_url:sub(30):gsplit("-")
-        while tonumber(title_parts[#title_parts]) do
-          title_parts[#title_parts] = nil
+        if current_domain.name == "literotica.com" then
+          local title_parts = section_url:sub(30):gsplit("-")
+          while tonumber(title_parts[#title_parts]) do
+            title_parts[#title_parts] = nil
+          end
+          local last_part = title_parts[#title_parts]
+          if last_part == "ch" or last_part == "pt" then
+            title_parts[#title_parts] = nil
+          end
+          for index, part in ipairs(title_parts) do
+            title_parts[index] = part:sub(1, 1):upper() .. part:sub(2)
+          end
+          markdown_file:write("\n\n# " .. table.concat(title_parts, " "))
+        elseif current_domain.name == "fanfiction.net" then
+          local title_parts = section_url:sub(38):gsplit("/")
+          markdown_file:write("\n\n# Chapter " .. title_parts[1])
         end
-        local last_part = title_parts[#title_parts]
-        if last_part == "ch" or last_part == "pt" then
-          title_parts[#title_parts] = nil
-        end
-        for index, part in ipairs(title_parts) do
-          title_parts[index] = part:sub(1, 1):upper() .. part:sub(2)
-        end
-        markdown_file:write("\n\n# " .. table.concat(title_parts, " "))
       end
       markdown_file:write("\n\n")
 
