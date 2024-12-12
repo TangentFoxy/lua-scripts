@@ -51,11 +51,6 @@ local domain_customizations = {
     content_selector = "div#workskin",
     conversion_method = "plaintext",
   },
-  ["fanfiction%.net/s/"] = {
-    name = "fanfiction.net",
-    content_selector = "#storytext",
-    conversion_method = "standard",
-  },
 }
 
 -- also checks for errors TODO make it check for ALL required elements and error if any are missing!
@@ -212,15 +207,10 @@ local function download_pages(config)
 
     for page = 1, config.page_counts[section - (config.sections.start - 1)] do
       local download_url
-      if current_domain.name == "fanfiction.net" then
-        local start, finish = config.base_url:find("/1/")
-        download_url = config.base_url:sub(1, start) .. section .. config.base_url:sub(finish)
+      if page == 1 then
+        download_url = section_url
       else
-        if page == 1 then
-          download_url = section_url
-        else
-          download_url = section_url .. "?page=" .. tostring(page)
-        end
+        download_url = section_url .. "?page=" .. tostring(page)
       end
 
       local temporary_html_file_name = utility.tmp_file_name()
@@ -343,9 +333,6 @@ local function write_markdown_file(config)
             title_parts[index] = part:sub(1, 1):upper() .. part:sub(2)
           end
           markdown_file:write("\n\n# " .. table.concat(title_parts, " "))
-        elseif current_domain.name == "fanfiction.net" then
-          local title_parts = section_url:sub(38):gsplit("/")
-          markdown_file:write("\n\n# Chapter " .. title_parts[1])
         end
       end
       markdown_file:write("\n\n")
