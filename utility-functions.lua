@@ -81,7 +81,7 @@ end
 
 utility.require = function(name)
   local success, package_or_err = pcall(function()
-    return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. name .. ".lua")
+    return dofile(utility.path .. name .. ".lua")
   end)
   if success then
     return package_or_err
@@ -170,6 +170,26 @@ utility.ls = function(path)
         fn(line)
       end
     end
+  end
+end
+
+local config
+utility.get_config = function()
+  if not config then
+    utility.open(utility.path .. "config.json", "r")(function(config_file)
+      local json = utility.require("json")
+      config = json.decode(config_file:read("*all"))
+    end)
+  end
+  return config
+end
+
+utility.save_config = function()
+  if config then
+    utility.open(utility.path .. "config.json", "w")(function(config_file)
+      local json = utility.require("json")
+      config_file:write(json.encode(config))
+    end)
   end
 end
 

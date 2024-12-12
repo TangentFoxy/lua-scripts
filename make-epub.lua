@@ -51,6 +51,12 @@ local domain_customizations = {
     content_selector = "div#workskin",
     conversion_method = "plaintext",
   },
+  ["furaffinity%.net/view/"] = {
+    name = "furaffinity.net",
+    content_selector = "div.submission-writing > center > div",
+    -- title_selector = "div.submission-title > h2",   -- because an extra paragraph tag is used, this breaks
+    conversion_method = "standard",
+  },
 }
 
 -- also checks for errors TODO make it check for ALL required elements and error if any are missing!
@@ -184,7 +190,7 @@ local function get_current_domain(url)
 
   -- NOTE/TODO this doesn't allow specifying custom selectors, which should overwrite and ignore this error
   if not current_domain then
-    error("\nThe domain of " .. section_url:enquote() .. " is not supported.\n")
+    error("\nThe domain of " .. url:enquote() .. " is not supported.\n")
   end
 
   return current_domain
@@ -214,7 +220,11 @@ local function download_pages(config)
       end
 
       local temporary_html_file_name = utility.tmp_file_name()
-      os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
+      if current_domain.name == "furaffinity.net" then
+        os.execute("curl --cookie " .. utility.get_config().fa_cookie_string:enquote() .. " " .. download_url:enquote() .. " > " .. temporary_html_file_name)
+      else
+        os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
+      end
 
       utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(html_file)
         local raw_html = html_file:read("*all")
