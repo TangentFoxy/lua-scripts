@@ -227,20 +227,27 @@ local function download_pages(config)
       os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
 
       utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(html_file)
-        local raw_html = html_file:read("*all")
+        utility.handle_error(function()
+          local raw_html = html_file:read("*all")
 
-        local parser = htmlparser.parse(raw_html, 100000)
-        local content_tag = parser:select(current_domain.content_selector)
-        local text = content_tag[1]:getcontent()
+          local parser = htmlparser.parse(raw_html, 100000)
+          local content_tag = parser:select(current_domain.content_selector)
+          local text = content_tag[1]:getcontent()
 
-        if page == 1 and config.extract_titles then
-          if current_domain.title_selector then
-            text = parser:select(current_domain.title_selector)[1]:gettext() .. text
+          if page == 1 and config.extract_titles then
+            if current_domain.title_selector then
+              text = parser:select(current_domain.title_selector)[1]:gettext() .. text
+            end
           end
-        end
 
-        utility.open(section_dir .. page .. ".html", "w")(function(page_file)
-          page_file:write(text .. "\n")
+          utility.open(section_dir .. page .. ".html", "w")(function(page_file)
+            page_file:write(text .. "\n")
+          end)
+        end,
+
+        function()
+          os.execute("rm " .. temporary_html_file_name)
+          error("Encountered an error parsing HTML. The website may have changed formatting?")
         end)
       end)
 
