@@ -175,11 +175,20 @@ end
 
 local config
 utility.get_config = function()
+  local file_exists = function(file_name) -- TODO make own accessible function
+    local file = io.open(file_name, "r")
+    if file then file:close() return true else return false end
+  end
   if not config then
-    utility.open(utility.path .. "config.json", "r")(function(config_file)
-      local json = utility.require("json")
-      config = json.decode(config_file:read("*all"))
-    end)
+    local config_path = utility.path .. "config.json"
+    if file_exists(config_path) then
+      utility.open(config_path, "r")(function(config_file)
+        local json = utility.require("json")
+        config = json.decode(config_file:read("*all"))
+      end)
+    else
+      config = {}
+    end
   end
   return config
 end

@@ -6,6 +6,12 @@ Personally convenient Lua scripts to add to my path.
 2. Add that somewhere to your path. (On Windows, search for Environment Variables (it's "part of" Control Panel) and use the UI to add them to System variables.)
 3. (On Windows) Add `.LUA` to PATHEXT.
 
+## Config
+A `config.json` file in this directory can be used to hold private information and default settings.
+
+Right now the only setting is `fa_cookie_string` which needs to be set to a string `curl` can interpret as cookies for a logged-in FurAffinity user.
+Practically, this means something that looks like `a=<secret>; b=<secret>; sz=<secret>`.
+
 ## Scripts
 - `2webm.lua`: Converts everything in the working directory to .webm files.
 - `llm.lua`: (Windows only!) A very WIP script for working with LLMs through WSL using [ollama](https://github.com/jmorganca/ollama).

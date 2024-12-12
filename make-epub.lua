@@ -221,7 +221,8 @@ local function download_pages(config)
 
       local temporary_html_file_name = utility.tmp_file_name()
       if current_domain.name == "furaffinity.net" then
-        os.execute("curl --cookie " .. utility.get_config().fa_cookie_string:enquote() .. " " .. download_url:enquote() .. " > " .. temporary_html_file_name)
+        local fa_cookie_string = assert(utility.get_config().fa_cookie_string, "You are missing FurAffinity cookies in config. See .lua-files README.")
+        os.execute("curl --cookie " .. fa_cookie_string:enquote() .. " " .. download_url:enquote() .. " > " .. temporary_html_file_name)
       else
         os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
       end
