@@ -151,6 +151,7 @@ local function format_metadata(config)
     "author: [" .. stringify_list(config.authors) .. "]",
     "keywords: [" .. keywords_string .. "]",
     "tags: [" .. keywords_string .. "]",
+    "publisher: " .. ("make-epub.lua"):enquote(),
     "---",
     "",
   }
