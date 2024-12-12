@@ -142,16 +142,6 @@ utility.open = function(file_name, mode, custom_error_message)
   end
 end
 
-utility.handle_error = function()
-  return function(fn, handler)
-    local success, result_or_error = pcall(function() return fn() end)
-    if not success then
-      handler(result_or_error)
-    end
-    return result_or_error
-  end
-end
-
 utility.escape_quotes = function(input)
   -- the order of these commands is important and must be preserved
   input = input:gsub("\\", "\\\\")
