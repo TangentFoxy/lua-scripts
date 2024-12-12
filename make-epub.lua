@@ -404,6 +404,16 @@ local function main(arguments)
     return load_config(config_file:read("*all"))
   end)
 
+  if config.base_url:find("fanfiction%.net/s/") then
+    if os.execute("fichub_cli --version") ~= 0 then
+      error("Run \"pip install -U fichub-cli\" to be able to download FanFiction.Net ebooks.\n\n")
+    end
+
+    local output_dir = "All ePubs"
+    os.execute("mkdir " .. output_dir:enquote())
+    return os.execute("fichub_cli -u " .. config.base_url .. " -o " .. output_dir:enquote())
+  end
+
   local actions = {
     download = download_pages,
     convert = convert_pages,
@@ -445,6 +455,7 @@ local function main(arguments)
     end
   end
   print("\nDone!\n")
+  return true
 end
 
 local positional_arguments = {"json_file_name", "action", "flag"}
@@ -463,5 +474,5 @@ if arguments.json_file_name == "." then
     end
   end)
 else
-  main(arguments)
+  return main(arguments)
 end
