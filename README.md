@@ -96,6 +96,7 @@ Example:
 - `manually_specified_sections`: (Optional) Boolean, must be `true`. Technically not required as the script is capable of figuring out you are using this variation, but *should be* included.
 - `sections`: Array of Strings: A complete URL for each story.
 - `section_titles`: (**Required**) Array of Strings: The titles to be used for Table of Contents / headings. (Must be in the same order as `sections`.)
+- `automatic_naming`: (Optional) Boolean: Will match a single line against common patterns denoting the beginning of a chapter and add a heading on such lines. It's the same as `sections.automatic_naming` above.
 
 Example:
 ```json

@@ -89,6 +89,10 @@ local function load_config(config_file_text)
     config.sections = {} -- I've decided to allow empty sections (defaults to 1 section, for single story ebooks)
   end
 
+  if config.automatic_naming then
+    config.sections.automatic_naming = true
+  end
+
   -- detecting manually specified sections and flagging it to the rest of the script
   if config.sections[1] then
     config.sections.start = 1
