@@ -212,48 +212,50 @@ local function download_pages(config)
   os.execute("mkdir " .. config.base_file_name:enquote())
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    os.execute("mkdir " .. section_dir:sub(1, -2):enquote())
+    if not utility.exists(section_dir:sub(1, -2) .. ".md") then
+      os.execute("mkdir " .. section_dir:sub(1, -2):enquote())
 
-    local section_url = get_section_url(config, section)
-    -- domain detected here so that multi-domain parts can be put in the same config
-    local current_domain = get_current_domain(section_url)
+      local section_url = get_section_url(config, section)
+      -- domain detected here so that multi-domain parts can be put in the same config
+      local current_domain = get_current_domain(section_url)
 
-    for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-      local download_url
-      if page == 1 then
-        download_url = section_url
-      else
-        download_url = section_url .. "?page=" .. tostring(page)
-      end
-
-      local temporary_html_file_name = utility.tmp_file_name()
-      if current_domain.name == "furaffinity.net" then
-        local fa_cookie_string = assert(utility.get_config().fa_cookie_string, "You are missing FurAffinity cookies in config. See .lua-files README.")
-        os.execute("curl --cookie " .. fa_cookie_string:enquote() .. " " .. download_url:enquote() .. " > " .. temporary_html_file_name)
-      else
-        os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
-      end
-
-      utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(html_file)
-        local raw_html = html_file:read("*all")
-
-        local parser = htmlparser.parse(raw_html, 100000)
-        local content_tag = parser:select(current_domain.content_selector)
-        local text = content_tag[1]:getcontent()
-
-        if page == 1 and config.extract_titles then
-          if current_domain.title_selector then
-            text = parser:select(current_domain.title_selector)[1]:gettext() .. text
-          end
+      for page = 1, config.page_counts[section - (config.sections.start - 1)] do
+        local download_url
+        if page == 1 then
+          download_url = section_url
+        else
+          download_url = section_url .. "?page=" .. tostring(page)
         end
 
-        utility.open(section_dir .. page .. ".html", "w")(function(page_file)
-          page_file:write(text .. "\n")
-        end)
-      end)
+        local temporary_html_file_name = utility.tmp_file_name()
+        if current_domain.name == "furaffinity.net" then
+          local fa_cookie_string = assert(utility.get_config().fa_cookie_string, "You are missing FurAffinity cookies in config. See .lua-files README.")
+          os.execute("curl --cookie " .. fa_cookie_string:enquote() .. " " .. download_url:enquote() .. " > " .. temporary_html_file_name)
+        else
+          os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
+        end
 
-      os.execute("rm " .. temporary_html_file_name)
-      os.execute("sleep " .. tostring(math.random(5))) -- avoid rate limiting
+        utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(html_file)
+          local raw_html = html_file:read("*all")
+
+          local parser = htmlparser.parse(raw_html, 100000)
+          local content_tag = parser:select(current_domain.content_selector)
+          local text = content_tag[1]:getcontent()
+
+          if page == 1 and config.extract_titles then
+            if current_domain.title_selector then
+              text = parser:select(current_domain.title_selector)[1]:gettext() .. text
+            end
+          end
+
+          utility.open(section_dir .. page .. ".html", "w")(function(page_file)
+            page_file:write(text .. "\n")
+          end)
+        end)
+
+        os.execute("rm " .. temporary_html_file_name)
+        os.execute("sleep " .. tostring(math.random(5))) -- avoid rate limiting
+      end
     end
   end
 end
@@ -264,19 +266,20 @@ local function convert_pages(config)
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
+    if not utility.exists(section_dir:sub(1, -2) .. ".md") then
+      local current_domain = get_current_domain(get_section_url(config, section))
 
-    local current_domain = get_current_domain(get_section_url(config, section))
-
-    for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-      local page_file_name_base = section_dir .. page
-      if current_domain.conversion_method == "standard" then
-        os.execute("pandoc --from html --to markdown " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
-      elseif current_domain.conversion_method == "plaintext" then
-        local plaintext_reader_path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "pandoc_plaintext_reader.lua"
-        os.execute("pandoc --from html --to plain " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".txt"):enquote())
-        os.execute("pandoc --from " .. plaintext_reader_path:enquote() .. " --to markdown " .. (page_file_name_base .. ".txt"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
-      else
-        error("\nInternal Error: Invalid conversion_method. This is an error with make-epub.lua itself. Please report this error.\n")
+      for page = 1, config.page_counts[section - (config.sections.start - 1)] do
+        local page_file_name_base = section_dir .. page
+        if current_domain.conversion_method == "standard" then
+          os.execute("pandoc --from html --to markdown " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
+        elseif current_domain.conversion_method == "plaintext" then
+          local plaintext_reader_path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "pandoc_plaintext_reader.lua"
+          os.execute("pandoc --from html --to plain " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".txt"):enquote())
+          os.execute("pandoc --from " .. plaintext_reader_path:enquote() .. " --to markdown " .. (page_file_name_base .. ".txt"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
+        else
+          error("\nInternal Error: Invalid conversion_method. This is an error with make-epub.lua itself. Please report this error.\n")
+        end
       end
     end
   end
@@ -287,35 +290,37 @@ local function concatenate_pages(config)
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    utility.open(config.base_file_name .. path_separator .. tostring(section) .. ".md", "w")(function(section_file)
-      for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-        utility.open(section_dir .. page .. ".md", "r")(function(page_file)
-          if config.sections.automatic_naming then
-            local naming_patterns = {
-              "^Prologue$",
-              "^Chapter %d+$",
-              "^Chapter %d+: [%w%s]+$",
-              "^%*%*CHAPTER ",
-              "^Epilogue$",
-              "^Epilog$",
-            }
-            local line = page_file:read("*line")
-            while line do
-              for _, pattern in ipairs(naming_patterns) do
-                if line:find(pattern) then
-                  line = "# " .. line
+    if not utility.exists(section_dir:sub(1, -2) .. ".md") then
+      utility.open(section_dir:sub(1, -2) .. ".md", "w")(function(section_file)
+        for page = 1, config.page_counts[section - (config.sections.start - 1)] do
+          utility.open(section_dir .. page .. ".md", "r")(function(page_file)
+            if config.sections.automatic_naming then
+              local naming_patterns = {
+                "^Prologue$",
+                "^Chapter %d+$",
+                "^Chapter %d+: [%w%s]+$",
+                "^%*%*CHAPTER ",
+                "^Epilogue$",
+                "^Epilog$",
+              }
+              local line = page_file:read("*line")
+              while line do
+                for _, pattern in ipairs(naming_patterns) do
+                  if line:find(pattern) then
+                    line = "# " .. line
+                  end
                 end
+                section_file:write(line .. "\n")
+                line = page_file:read("*line")
               end
-              section_file:write(line .. "\n")
-              line = page_file:read("*line")
+            else
+              section_file:write(page_file:read("*all"))
             end
-          else
-            section_file:write(page_file:read("*all"))
-          end
-          section_file:write("\n") -- guarantees no accidental line collisions
-        end)
-      end
-    end)
+            section_file:write("\n") -- guarantees no accidental line collisions
+          end)
+        end
+      end)
+    end
   end
 end
 
