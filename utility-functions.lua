@@ -27,7 +27,7 @@ end
 utility.path = arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") -- inspired by discussion in https://stackoverflow.com/q/6380820
 
 -- always uses outputting to a temporary file to guarantee safety
-function os.capture_safe(command, tmp_file_name)
+function utility.capture_safe(command, tmp_file_name)
   local file_name = tmp_file_name or utility.tmp_file_name()
   os.execute(command .. " > " .. file_name)
 
@@ -38,7 +38,7 @@ function os.capture_safe(command, tmp_file_name)
   return output
 end
 
-function os.capture(command)
+function utility.capture(command)
   if io.popen then
     local file = assert(io.popen(command, 'r'))
     local output = assert(file:read('*all'))
@@ -49,6 +49,10 @@ function os.capture(command)
     return os.capture_safe(command)
   end
 end
+
+-- NOTE DEPRECATED (I shouldn't pollute default namespaces unless it really makes things work better, like with string functions)
+os.capture_safe = utility.capture_safe
+os.capture = utility.capture
 
 -- trim6 from Lua users wiki (best all-round pure Lua performance)
 function string.trim(s)
@@ -173,15 +177,16 @@ utility.ls = function(path)
   end
 end
 
+utility.exists = function(file_name)
+  local file = io.open(file_name, "r")
+  if file then file:close() return true else return false end
+end
+
 local config
 utility.get_config = function()
-  local file_exists = function(file_name) -- TODO make own accessible function
-    local file = io.open(file_name, "r")
-    if file then file:close() return true else return false end
-  end
   if not config then
     local config_path = utility.path .. "config.json"
-    if file_exists(config_path) then
+    if utility.exists(config_path) then
       utility.open(config_path, "r")(function(config_file)
         local json = utility.require("json")
         config = json.decode(config_file:read("*all"))
