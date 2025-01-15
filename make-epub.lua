@@ -352,8 +352,8 @@ local function write_markdown_file(config)
       end
       markdown_file:write("\n\n")
 
-      local section_file_name = config.base_file_name .. path_separator .. tostring(section)
-      utility.open(section_file_name .. ".md", "r")(function(section_file)
+      local section_file_name = get_section_dir(config, section):sub(1, -2) .. ".md"
+      utility.open(section_file_name, "r")(function(section_file)
         markdown_file:write(section_file:read("*all"))
       end)
     end
