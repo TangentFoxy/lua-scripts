@@ -200,15 +200,18 @@ local function get_current_domain(url)
   return current_domain
 end
 
+local function get_section_dir(config, section)
+  return config.base_file_name .. path_separator .. tostring(section) .. path_separator
+end
+
 local function download_pages(config)
   print("\nDownloading pages...\n")
   local htmlparser = utility.require("htmlparser")
   utility.required_program("curl")
-  local working_dir = config.base_file_name
 
-  os.execute("mkdir " .. working_dir:enquote())
+  os.execute("mkdir " .. config.base_file_name:enquote())
   for section = config.sections.start, config.sections.finish do
-    local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
+    local section_dir = get_section_dir(config, section)
     os.execute("mkdir " .. section_dir:sub(1, -2):enquote())
 
     local section_url = get_section_url(config, section)
@@ -258,10 +261,9 @@ end
 local function convert_pages(config)
   print("\nConverting pages...\n")
   utility.required_program("pandoc")
-  local working_dir = config.base_file_name
 
   for section = config.sections.start, config.sections.finish do
-    local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
+    local section_dir = get_section_dir(config, section)
 
     local current_domain = get_current_domain(get_section_url(config, section))
 
@@ -282,11 +284,10 @@ end
 
 local function concatenate_pages(config)
   print("\nConcatenating pages...\n")
-  local working_dir = config.base_file_name
 
   for section = config.sections.start, config.sections.finish do
-    local section_dir = working_dir .. path_separator .. tostring(section) .. path_separator
-    utility.open(working_dir .. path_separator .. tostring(section) .. ".md", "w")(function(section_file)
+    local section_dir = get_section_dir(config, section)
+    utility.open(config.base_file_name .. path_separator .. tostring(section) .. ".md", "w")(function(section_file)
       for page = 1, config.page_counts[section - (config.sections.start - 1)] do
         utility.open(section_dir .. page .. ".md", "r")(function(page_file)
           if config.sections.automatic_naming then
@@ -320,7 +321,6 @@ end
 
 local function write_markdown_file(config)
   print("\nWriting Markdown file...\n")
-  local working_dir = config.base_file_name
 
   utility.open(config.base_file_name .. ".md", "w")(function(markdown_file)
     markdown_file:write(format_metadata(config))
@@ -352,7 +352,7 @@ local function write_markdown_file(config)
       end
       markdown_file:write("\n\n")
 
-      local section_file_name = working_dir .. path_separator .. tostring(section)
+      local section_file_name = config.base_file_name .. path_separator .. tostring(section)
       utility.open(section_file_name .. ".md", "r")(function(section_file)
         markdown_file:write(section_file:read("*all"))
       end)
@@ -382,19 +382,17 @@ end
 
 local function rm_page_files(config)
   print("\nRemoving page files...\n")
-  local working_dir = config.base_file_name
 
   for section = config.sections.start, config.sections.finish do
-    local section_dir = working_dir .. path_separator .. tostring(section)
-    os.execute(utility.recursive_remove_command .. section_dir:enquote())
+    local section_dir = get_section_dir(config, section)
+    os.execute(utility.recursive_remove_command .. section_dir:sub(1, -2):enquote())
   end
 end
 
 local function rm_all(config)
   print("\nRemoving all extra files...\n")
-  local working_dir = config.base_file_name
 
-  os.execute(utility.recursive_remove_command .. working_dir:enquote())
+  os.execute(utility.recursive_remove_command .. config.base_file_name:enquote())
   os.execute("rm " .. (config.base_file_name .. ".md"):enquote())
 end
 
