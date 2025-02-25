@@ -239,7 +239,7 @@ local function download_pages(config)
           local raw_html = html_file:read("*all")
 
           local parser = htmlparser.parse(raw_html, 100000)
-          local content_tag = parser:select(current_domain.content_selector)
+          local content_tag = parser:select(config.custom_content_selector or current_domain.content_selector)
           local text = content_tag[1]:getcontent()
 
           if page == 1 and config.extract_titles then

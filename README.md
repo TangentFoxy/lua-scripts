@@ -63,6 +63,7 @@ The following is shared:
 - `extract_titles`: (Optional) Boolean: Titles will be extracted from the first page of every section. (Note: This is compatible with `sections.automatic_naming`, but it can create repeated titles.)
 - `lazy_titling`: (Optional) Boolean: URLs will be used to generate section titles. (Warning: This process is likely to create janky titles. Note: This is compatible with `sections.automatic_naming`, but it can create repeated titles.)
 - `page_counts`: Array of Integers: The number of pages on LitErotica per "story". (I call them sections because this script was made to put together story series originally.)
+- `custom_content_selector`: For supported domains, a different selector can be used for the main content.
 
 #### Variation: Book
 - `base_url`: String: A partial URL that is the beginning of the URL used for each section (story) on LitErotica. (This script currently only works for stories that end in a padded two-digit number.) (Technically optional if `first_section_url` is specified, and `sections.start` and `sections.finish` are both `1`.)
