@@ -333,6 +333,10 @@ local function write_markdown_file(config)
     markdown_file:write(format_metadata(config))
     markdown_file:write(copyright_warning)
 
+    if config.description then
+      markdown_file:write("\n\n---\n\n" .. tostring(config.description))
+    end
+
     for section = config.sections.start, config.sections.finish do
       if config.sections.naming then
         markdown_file:write("\n\n# " .. config.sections.naming .. " " .. tostring(section))
@@ -363,6 +367,10 @@ local function write_markdown_file(config)
       utility.open(section_file_name, "r")(function(section_file)
         markdown_file:write(section_file:read("*all"))
       end)
+    end
+
+    if config.backmatter_raw then
+      markdown_file:write("\n\n" .. tostring(config.backmatter_raw))
     end
 
     markdown_file:write("\n\n# Ebook Creation Metadata\n\n")
