@@ -300,6 +300,8 @@ local function concatenate_pages(config)
                 "^Chapter %d+$",
                 "^Chapter %d+: [%w%s]+$",
                 "^%*%*CHAPTER ",
+                "^%*%*Chapter ",
+                "^%*%*%*%*Chapter ",
                 "^Epilogue$",
                 "^Epilog$",
               }
