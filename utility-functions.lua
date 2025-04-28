@@ -17,11 +17,19 @@ local utility = {}
 if package.config:sub(1, 1) == "\\" then
   utility.OS = "Windows"
   utility.path_separator = "\\"
-  utility.recursive_remove_command = "rmdir /s /q "
+  utility.recursive_remove_command = "rmdir /s /q " -- NOTE deprecated, kept for some reason :D
+  utility.commands = {
+    recursive_remove = "rmdir /s /q ",
+    list = "dir /w /b",
+  }
 else
   utility.OS = "UNIX-like"
   utility.path_separator = "/"
-  utility.recursive_remove_command = "rm -r "
+  utility.recursive_remove_command = "rm -r " -- NOTE deprecated, kept for some reason :D
+  utility.commands = {
+    recursive_remove = "rm -r ",
+    list = "ls -1",
+  }
 end
 
 utility.path = arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)") -- inspired by discussion in https://stackoverflow.com/q/6380820
@@ -132,6 +140,11 @@ utility.make_safe_file_name = function(file_name)
   return file_name
 end
 
+utility.split_path_components = function(file_path)
+  local path, name, extension = string.match(file_path, "(.-)([^\\/]-%.?([^%.\\/]*))$")
+  return path, name, extension
+end
+
 -- io.open, but errors are immediately thrown, and the file is closed for you
 utility.open = function(file_name, mode, custom_error_message)
   local file, err = io.open(file_name, mode)
@@ -155,12 +168,7 @@ end
 
 -- Example, print all items in this directory: utility.ls(".")(print)
 utility.ls = function(path)
-  local command
-  if utility.OS == "Windows" then
-    command = "dir /w /b"
-  else
-    command = "ls -1"
-  end
+  local command = utility.commands.list
   if path then
     command = command .. " \"" .. path .. "\""
   end
