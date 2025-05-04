@@ -1,5 +1,9 @@
 #!/usr/bin/env luajit
 
+-- INPUT: File name containing a list of URLs to stories. If 1st line isn't a URL, it is the title to be used.
+-- OUTPUT: A nearly complete config for use with make-epub.lua, named after the file name or title used.
+-- Only works with LitErotica.
+
 local success, utility = pcall(function()
   return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
 end)
@@ -28,6 +32,7 @@ local config = {
   automatic_naming = true,
   page_counts = {},
 }
+local unique_authors = {} -- authors are stored in order of appearance, but a table of unique keys is kept to make sure duplicate entries aren't created
 
 utility.open(urls_file, "r", "No such file " .. urls_file:enquote())(function(urls_file)
   local download_url = urls_file:read("*line")
@@ -49,7 +54,11 @@ utility.open(urls_file, "r", "No such file " .. urls_file:enquote())(function(ur
         local raw_html = html_file:read("*all")
         local parser = htmlparser.parse(raw_html, 100000)
 
-        config.authors[#config.authors + 1] = parser:select(".y_eS > .y_eU")[1]:getcontent() -- NOTE can create duplicate authors
+        local author = parser:select(".y_eS > .y_eU")[1]:getcontent()
+        if not unique_authors[author] then -- only add them if they aren't already listed!
+          config.authors[#config.authors + 1] =  author
+          unique_authors[author] = true
+        end
         config.sections[#config.sections + 1] = download_url
         config.section_titles[#config.section_titles + 1] = parser:select(".headline")[1]:getcontent()
       end)
@@ -62,21 +71,10 @@ utility.open(urls_file, "r", "No such file " .. urls_file:enquote())(function(ur
   end
 end)
 
--- fix duplicated authors, if present
-local unique_authors = {}
-for i = #config.authors, 2, -1 do
-  if unique_authors[config.authors[i]] then
-    table.remove(config.authors, i)
-  else
-    unique_authors[config.authors[i]] = true
-  end
-end
-
 -- save "final" config
 config.base_file_name = utility.make_safe_file_name(config.base_file_name or (config.title .. " by " .. config.authors[1]))
 utility.open(config.base_file_name .. ".json", "w")(function(config_file)
   config_file:write(json.encode(config) .. "\n")
 end)
 
--- print("Note: This script can duplicate authors in the list.")
 print("! YOU MUST MANUALLY ADD THE CORRECT VALUES TO PAGE_COUNTS !")
