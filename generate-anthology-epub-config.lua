@@ -2,7 +2,7 @@
 
 -- INPUT: File name containing a list of URLs to stories. If 1st line isn't a URL, it is the title to be used.
 -- OUTPUT: A nearly complete config for use with make-epub.lua, named after the file name or title used.
--- Only works with LitErotica.
+-- Only works with LitErotica. Output JSON is minified, sorry.
 
 local success, utility = pcall(function()
   return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
