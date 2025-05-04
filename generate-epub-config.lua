@@ -1,5 +1,9 @@
 #!/usr/bin/env luajit
 
+-- INPUT: A URL to a series page on LitErotica.
+-- OUTPUT: A mostly-ready config for make-epub.lua based on that series.
+-- Unfortunately, will produces minified JSON.
+
 local success, utility = pcall(function()
   return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
 end)
