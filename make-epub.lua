@@ -40,10 +40,16 @@ local path_separator = utility.path_separator
 local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of its copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
 
 local domain_customizations = {
-  ["literotica%.com/s/"] = {
+  ["www%.literotica%.com/s/"] = {
     name = "literotica.com",
     content_selector = ".article > div > div",
     title_selector = ".headline",
+    conversion_method = "standard",
+  },
+  ["spanish%.literotica%.com/s/"] = {
+    name = "spanish.literotica.com",
+    content_selector = ".article > div > div",
+    title_selector = "._title_jwt1s_446",
     conversion_method = "standard",
   },
   ["archiveofourown%.org/works/"] = {
@@ -346,9 +352,16 @@ local function write_markdown_file(config)
         local section_url = get_section_url(config, section)
         local current_domain = get_current_domain(section_url)
 
-        if current_domain.name == "literotica.com" then
-          local title_parts = section_url:sub(30):gsplit("-")
-          while tonumber(title_parts[#title_parts]) do
+        if current_domain.name:find("literotica") then
+          local title_parts
+          if current_domain.name == "literotica.com" then
+            title_parts = section_url:sub(30):gsplit("-")
+          elseif current_domain.name == "spanish.literotica.com" then
+            title_parts = section_url:sub(34):gsplit("-")
+          else
+            error("Invalid subdomain.")
+          end
+          while tonumber(title_parts[#title_parts]) do -- remove trailing numbers
             title_parts[#title_parts] = nil
           end
           local last_part = title_parts[#title_parts]
