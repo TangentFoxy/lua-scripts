@@ -64,8 +64,9 @@ The following is shared:
 - `lazy_titling`: (Optional) Boolean: URLs will be used to generate section titles. (Warning: This process is likely to create janky titles. Note: This is compatible with `sections.automatic_naming`, but it can create repeated titles.)
 - `page_counts`: Array of Integers: The number of pages on LitErotica per "story". (I call them sections because this script was made to put together story series originally.)
 - `custom_content_selector`: For supported domains, a different selector can be used for the main content.
-- `description`: (Optional) String: A description to be inserted after the copyright warning. (Technically, since this is put in the final markdown file raw, you can shove other things in here too, if you want to insert content before the first part of story text.)
+- `description` OR `frontmatter_raw`: (Optional) String: A description to be inserted after the copyright warning. (Technically, since this is put in the final markdown file raw, you can shove other things in here too, if you want to insert content before the first part of story text.) (`description` is intended to go within the copyright warning block, `frontmatter_raw` expects you to use a heading for a custom block.)
 - `backmatter_raw`: (Optional) String: A place to put content after the last part, before the ebook creation metadata. You should start this with a chapter heading to prevent it being tacked into the last part!
+- `domains`: (Optional) See make-epub.lua to understand the format. This allows you to overwrite or add new processing options for different domains, so that this script can be used for some places I haven't tried to use it for.
 
 #### Variation: Book
 - `base_url`: String: A partial URL that is the beginning of the URL used for each section (story) on LitErotica. (This script currently only works for stories that end in a padded two-digit number.) (Technically optional if `first_section_url` is specified, and `sections.start` and `sections.finish` are both `1`.)

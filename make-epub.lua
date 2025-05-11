@@ -46,7 +46,7 @@ local domain_customizations = {
     title_selector = ".headline",
     conversion_method = "standard",
   },
-  ["spanish%.literotica%.com/s/"] = {
+  ["spanish%.literotica%.com/s/"] = { -- this doesn't seem to work, and I have no idea why not
     name = "spanish.literotica.com",
     content_selector = ".article > div > div",
     title_selector = "._title_jwt1s_446",
@@ -73,6 +73,13 @@ local function load_config(config_file_text)
   config.config_file_text = config_file_text
 
   -- domain is not detected here, because when manually specifying sections, different sections can come from different domains
+  -- but if the config adds its own definition(s), those need to be incorporated right away!
+  --  and yes, this allows overwriting and that is intentional!
+  if config.domains then
+    for key, value in pairs(config.domains) do
+      domain_customizations[key] = value
+    end
+  end
 
   if not config.authors then
     config.authors = {} -- at least have an empty table so it doesn't error below TODO verify that this is actually true
@@ -338,6 +345,10 @@ local function write_markdown_file(config)
   utility.open(config.base_file_name .. ".md", "w")(function(markdown_file)
     markdown_file:write(format_metadata(config))
     markdown_file:write(copyright_warning)
+
+    if config.frontmatter_raw then
+      markdown_file:write("\n\n" .. tostring(config.frontmatter_raw))
+    end
 
     if config.description then
       markdown_file:write("\n\n---\n\n" .. tostring(config.description))

@@ -1,0 +1,9 @@
+{
+  "authors": ["author"],
+  "title": "title",
+  "base_file_name": "title by author",
+  "extract_titles": true,
+  "automatic_naming": true,
+  "sections": [],
+  "page_counts": []
+}
