@@ -22,6 +22,7 @@ local config = {
   extract_titles = true,
   automatic_naming = true,
   page_counts = {},
+  source_url = download_url, -- not a feature of make-epub, but useful to keep around
 }
 
 local temporary_html_file_name = utility.tmp_file_name()
@@ -35,6 +36,7 @@ utility.open(temporary_html_file_name, "r", "Could not download " .. download_ur
 
   config.authors[1] = parser:select(".y_eS > .y_eU")[1]:getcontent()
   config.title = parser:select(".headline")[1]:getcontent()
+  config.title = config.title:gsub("&#x27;", "'")
 
   local sections = parser:select(".series__works > .br_ri")
   for index, value in ipairs(sections) do

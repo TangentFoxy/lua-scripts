@@ -25,6 +25,7 @@ local config = {
   automatic_naming = true,
   page_counts = {},
   series = {}, -- not recognized by make-epub.lua, but useful to keep
+  source_url = download_url, -- not a feature of make-epub, but useful to keep around
 }
 
 local temporary_html_file_name = utility.tmp_file_name()
@@ -38,7 +39,7 @@ utility.open(temporary_html_file_name, "r", "Could not download " .. download_ur
 
   config.authors[1] = parser:select("._header_title_dcvym_56")[1]:getcontent()
   -- config.title = parser:select(".headline")[1]:getcontent()
-  config.title = "Collected Works"
+  config.title = config.authors[1] .. "'s Collected Works"
 
   local sections = parser:select("._item_title_zx1nh_223")
   for _, value in ipairs(sections) do
@@ -55,7 +56,7 @@ os.execute("rm " .. temporary_html_file_name)
 if not next(config.series) then config.series = nil end -- remove series if unused
 
 -- save "final" config
-config.base_file_name = utility.make_safe_file_name(config.base_file_name or (config.title .. " by " .. config.authors[1]))
+config.base_file_name = utility.make_safe_file_name(config.base_file_name or config.title)
 utility.open(config.base_file_name .. ".json", "w")(function(config_file)
   config_file:write(json.encode(config) .. "\n")
 end)
