@@ -23,7 +23,8 @@ local config = {
   sections = {},
   extract_titles = true,
   automatic_naming = true,
-  page_counts = {},
+  -- page_counts = {}, -- using discover_page_counts now!
+  discover_page_counts = true,
   series = {}, -- not recognized by make-epub.lua, but useful to keep
   source_url = download_url, -- not a feature of make-epub, but useful to keep around
 }
@@ -64,4 +65,4 @@ end)
 if config.series then
   print("! SERIES WERE FOUND ON THIS PAGE !\n  These are included in sections, may not be in the right order,\n  and a separate list of series was also exported.")
 end
-print("! YOU MUST MANUALLY ADD THE CORRECT VALUES TO PAGE_COUNTS !")
+-- print("! YOU MUST MANUALLY ADD THE CORRECT VALUES TO PAGE_COUNTS !")

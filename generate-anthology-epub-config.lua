@@ -30,7 +30,8 @@ local config = {
   section_titles = {},
   -- extract_titles = true, -- this script extracts them ahead of time, so don't duplicate that work
   automatic_naming = true,
-  page_counts = {},
+  -- page_counts = {}, -- using discover_page_counts now!
+  discover_page_counts = true,
 }
 local unique_authors = {} -- authors are stored in order of appearance, but a table of unique keys is kept to make sure duplicate entries aren't created
 
@@ -60,7 +61,7 @@ utility.open(urls_file, "r", "No such file " .. urls_file:enquote())(function(ur
           unique_authors[author] = true
         end
         config.sections[#config.sections + 1] = download_url
-        config.section_titles[#config.section_titles + 1] = parser:select(".headline")[1]:getcontent()
+        config.section_titles[#config.section_titles + 1] = parser:select(".headline")[1]:getcontent():gsub("&#x27;", "'")
       end)
       os.execute("rm " .. temporary_html_file_name)
 
@@ -71,10 +72,15 @@ utility.open(urls_file, "r", "No such file " .. urls_file:enquote())(function(ur
   end
 end)
 
+-- correct author for single-author anthologies
+if #config.authors == 2 then
+  table.remove(config.authors, 1)
+end
+
 -- save "final" config
 config.base_file_name = utility.make_safe_file_name(config.base_file_name or (config.title .. " by " .. config.authors[1]))
 utility.open(config.base_file_name .. ".json", "w")(function(config_file)
   config_file:write(json.encode(config) .. "\n")
 end)
 
-print("! YOU MUST MANUALLY ADD THE CORRECT VALUES TO PAGE_COUNTS !")
+-- print("! YOU MUST MANUALLY ADD THE CORRECT VALUES TO PAGE_COUNTS !")

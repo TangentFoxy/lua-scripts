@@ -21,7 +21,8 @@ local config = {
   sections = {},
   extract_titles = true,
   automatic_naming = true,
-  page_counts = {},
+  -- page_counts = {}, -- using discover_page_counts now!
+  discover_page_counts = true,
   source_url = download_url, -- not a feature of make-epub, but useful to keep around
 }
 
@@ -45,44 +46,10 @@ utility.open(temporary_html_file_name, "r", "Could not download " .. download_ur
 end)
 os.execute("rm " .. temporary_html_file_name)
 
--- NOTE when I downlload a file, the page counts are dynamically loaded and thus not present,
---       but when I disable JavaScript, the page counts are there anyhow
---       I do not understand how both of these things can be possible.
-
--- for index, href in ipairs(config.sections) do
---   os.execute("explorer " .. href:enquote()) -- open all of them so you can get the counts yourself
--- end
-
--- NOTE I don't like that this means duplicating a lot of downloads just to generate a config
--- for index, href in ipairs(config.sections) do
---   local temporary_html_file_name = utility.tmp_file_name()
---   os.execute("curl " .. href:enquote() .. " > " .. temporary_html_file_name)
---
---   utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(html_file)
---     local raw_html = html_file:read("*all")
---     local parser = htmlparser.parse(raw_html, 100000)
---
---     local pages = parser:select(".panel .clearfix .l_bH > .l_bJ")
---     if not pages then
---       config.page_counts[index] = 1
---     else
---       print(pages, #pages)
---       print(pages[#pages])
---       config.page_counts[index] = tonumber(pages[#pages]:getcontent())
---     end
---
---     -- DEBUG
---     return print(json.encode(config))
---   end)
---   os.execute("rm " .. temporary_html_file_name)
---
---   os.execute("sleep " .. tostring(math.random(5))) -- avoid rate limiting
--- end
-
 -- save "final" config
 config.base_file_name = utility.make_safe_file_name(config.base_file_name or (config.title .. " by " .. config.authors[1]))
 utility.open(config.base_file_name .. ".json", "w")(function(config_file)
   config_file:write(json.encode(config) .. "\n")
 end)
 
-print("! YOU MUST MANUALLY ADD THE CORRECT VALUES TO PAGE_COUNTS !")
+-- print("! YOU MUST MANUALLY ADD THE CORRECT VALUES TO PAGE_COUNTS !")

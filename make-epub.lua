@@ -65,6 +65,8 @@ local domain_customizations = {
   },
 }
 
+local absurdly_high_number = 1e13
+
 -- also checks for errors TODO make it check for ALL required elements and error if any are missing!
 local function load_config(config_file_text)
   local json = utility.require("json")
@@ -129,8 +131,15 @@ local function load_config(config_file_text)
   -- make page_counts optional for single-page downloads
   if not config.page_counts then
     config.page_counts = {}
-    for _ = config.sections.start, config.sections.finish do
-      table.insert(config.page_counts, 1)
+    if config.discover_page_counts then
+      config.first_run = true
+      for _ = config.sections.start, config.sections.finish do
+        table.insert(config.page_counts, absurdly_high_number)
+      end
+    else
+      for _ = config.sections.start, config.sections.finish do
+        table.insert(config.page_counts, 1)
+      end
     end
   end
 
@@ -240,7 +249,27 @@ local function download_pages(config)
           download_url = section_url .. "?page=" .. tostring(page)
         end
 
-        local temporary_html_file_name = utility.tmp_file_name()
+        local temporary_html_file_name
+        if config.discover_page_counts then
+          local exists
+          temporary_html_file_name = utility.tmp_file_name()
+          os.execute("curl -I " ..download_url:enquote() .. " > " .. temporary_html_file_name)
+          utility.open(temporary_html_file_name, "r", "Could not receive HEAD request: " .. download_url:enquote())(function(html_file)
+            local raw_html = html_file:read("*all")
+            if raw_html:find("404 Not Found") then
+              exists = false
+            else
+              exists = true
+            end
+          end)
+          os.execute("rm " .. temporary_html_file_name)
+          if not exists then
+            config.page_counts[section - (config.sections.start - 1)] = page - 1
+            break
+          end
+        end
+
+        temporary_html_file_name = utility.tmp_file_name()
         if current_domain.name == "furaffinity.net" then
           local fa_cookie_string = assert(utility.get_config().fa_cookie_string, "You are missing FurAffinity cookies in config. See .lua-files README.")
           os.execute("curl --cookie " .. fa_cookie_string:enquote() .. " " .. download_url:enquote() .. " > " .. temporary_html_file_name)
@@ -273,6 +302,21 @@ local function download_pages(config)
   end
 end
 
+local function check_page_counts(config, section, section_dir)
+  -- if discover_page_counts was used and the script was interrupted, could be in a weird state
+  if config.page_counts[section - (config.sections.start - 1)] == absurdly_high_number then
+    local _pages = {}
+    utility.ls(section_dir)(function(item)
+      local _number = tonumber(item)
+      if _number then
+        table.insert(_pages, _number)
+      end
+    end)
+    table.sort(_pages)
+    config.page_counts[section - (config.sections.start - 1)] = _pages[#_pages]
+  end
+end
+
 local function convert_pages(config)
   print("\nConverting pages...\n")
   utility.required_program("pandoc")
@@ -281,6 +325,8 @@ local function convert_pages(config)
     local section_dir = get_section_dir(config, section)
     if not utility.exists(section_dir:sub(1, -2) .. ".md") then
       local current_domain = get_current_domain(get_section_url(config, section))
+
+      check_page_counts(config, section, section_dir)
 
       for page = 1, config.page_counts[section - (config.sections.start - 1)] do
         local page_file_name_base = section_dir .. page
@@ -305,6 +351,7 @@ local function concatenate_pages(config)
     local section_dir = get_section_dir(config, section)
     if not utility.exists(section_dir:sub(1, -2) .. ".md") then
       utility.open(section_dir:sub(1, -2) .. ".md", "w")(function(section_file)
+        check_page_counts(config, section, section_dir)
         for page = 1, config.page_counts[section - (config.sections.start - 1)] do
           utility.open(section_dir .. page .. ".md", "r")(function(page_file)
             if config.sections.automatic_naming then
@@ -401,6 +448,11 @@ local function write_markdown_file(config)
     markdown_file:write(copyright_warning)
     markdown_file:write("This ebook was created using the following config:\n\n")
     markdown_file:write("```json\n" .. config.config_file_text .. "\n```\n")
+    if config.discover_page_counts and config.first_run then
+      local json = utility.require("json")
+      markdown_file:write("page_counts were calculated/discovered:\n\n")
+      markdown_file:write("```json\n" .. json.encode(config.page_counts) .. "\n```\n")
+    end
   end)
 end
 
