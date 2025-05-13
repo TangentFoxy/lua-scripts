@@ -7,6 +7,8 @@ if not success then
 end
 
 utility.ls(".")(function(file_name)
-  os.execute("lua C:\\Users\\Public\\.lua-files\\make-epub.lua \"" .. file_name .. "\"")
-  os.execute("sleep " .. math.random(5))
+  if file_name:find("%.json$") then
+    os.execute("lua C:\\Users\\Public\\.lua-files\\make-epub.lua \"" .. file_name .. "\"")
+    os.execute("sleep " .. math.random(5))
+  end
 end)
