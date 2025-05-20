@@ -215,4 +215,19 @@ utility.save_config = function()
   end
 end
 
+utility.deepcopy = function(tab)
+  local _type = type(tab)
+  local copy
+  if _type == "table" then
+    copy = {}
+    for key, value in next, tab, nil do
+      copy[utility.deepcopy(key)] = utility.deepcopy(value)
+    end
+    setmetatable(copy, utility.deepcopy(getmetatable(tab)))
+  else
+    copy = tab
+  end
+  return copy
+end
+
 return utility

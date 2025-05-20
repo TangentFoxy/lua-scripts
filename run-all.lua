@@ -6,9 +6,7 @@ if not success then
   error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
 end
 
+-- arg[1] would need to be "make-epub.lua" to do what this was previously doing
 utility.ls(".")(function(file_name)
-  if file_name:find("%.json$") then
-    os.execute("lua C:\\Users\\Public\\.lua-files\\make-epub.lua \"" .. file_name .. "\"")
-    os.execute("sleep " .. math.random(5))
-  end
+  os.execute("lua " .. utility.path .. arg[1] .. " " .. file_name:enquote())
 end)
