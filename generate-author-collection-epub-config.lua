@@ -38,9 +38,9 @@ utility.open(temporary_html_file_name, "r", "Could not download " .. download_ur
   local raw_html = html_file:read("*all")
   local parser = htmlparser.parse(raw_html, 100000)
 
-  config.authors[1] = parser:select("._header_title_dcvym_56")[1]:getcontent()
+  config.authors[1] = parser:select("._header_title_1rw38_66")[1]:getcontent()
   -- config.title = parser:select(".headline")[1]:getcontent()
-  config.title = config.authors[1] .. "'s Collected Works"
+  config.title = "Collected Works of " .. config.authors[1]
 
   local sections = parser:select("._item_title_zx1nh_223")
   for _, value in ipairs(sections) do
