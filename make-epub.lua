@@ -256,7 +256,7 @@ local function download_pages(config)
           os.execute("curl -I " ..download_url:enquote() .. " > " .. temporary_html_file_name)
           utility.open(temporary_html_file_name, "r", "Could not receive HEAD request: " .. download_url:enquote())(function(html_file)
             local raw_html = html_file:read("*all")
-            if raw_html:find("404 Not Found") then
+            if raw_html:find("404 Not Found") or raw_html:find("HTTP/2 404") then
               exists = false
             else
               exists = true
