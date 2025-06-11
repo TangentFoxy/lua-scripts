@@ -28,13 +28,8 @@ For how to write a configuration and examples, see the .lua-files README:
   https://github.com/TangentFoxy/.lua-files#make-epublua
 ]]
 
-local success, utility = pcall(function()
-  return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
-end)
-if not success then
-  print("\n\n" .. tostring(utility))
-  error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
-end
+package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
+local utility = require "utility"
 
 local path_separator = utility.path_separator
 local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of its copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
@@ -164,9 +159,9 @@ end
 local function format_metadata(config)
   local function stringify_list(list)
     if not list or not list[1] then return "" end
-    local output = utility.escape_quotes(list[1]):enquote()
+    local output = utility.escape_quotes_and_escapes(list[1]):enquote()
     for i = 2, #list do
-      output = output .. ", " .. utility.escape_quotes(list[i]):enquote()
+      output = output .. ", " .. utility.escape_quotes_and_escapes(list[i]):enquote()
     end
     return output
   end
@@ -174,7 +169,7 @@ local function format_metadata(config)
   local keywords_string = stringify_list(config.keywords)
   local metadata = {
     "---",
-    "title: " .. utility.escape_quotes(config.title):enquote(),
+    "title: " .. utility.escape_quotes_and_escapes(config.title):enquote(),
     "author: [" .. stringify_list(config.authors) .. "]",
     "keywords: [" .. keywords_string .. "]",
     "tags: [" .. keywords_string .. "]",
@@ -234,7 +229,7 @@ local function download_pages(config)
   os.execute("mkdir " .. config.base_file_name:enquote())
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    if not utility.exists(section_dir:sub(1, -2) .. ".md") then
+    if not utility.file_exists(section_dir:sub(1, -2) .. ".md") then
       os.execute("mkdir " .. section_dir:sub(1, -2):enquote())
 
       local section_url = get_section_url(config, section)
@@ -323,7 +318,7 @@ local function convert_pages(config)
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    if not utility.exists(section_dir:sub(1, -2) .. ".md") then
+    if not utility.file_exists(section_dir:sub(1, -2) .. ".md") then
       local current_domain = get_current_domain(get_section_url(config, section))
 
       check_page_counts(config, section, section_dir)
@@ -333,7 +328,7 @@ local function convert_pages(config)
         if current_domain.conversion_method == "standard" then
           os.execute("pandoc --from html --to markdown " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
         elseif current_domain.conversion_method == "plaintext" then
-          local plaintext_reader_path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "pandoc_plaintext_reader.lua"
+          local plaintext_reader_path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. utility.path_separator .. "pandoc_plaintext_reader.lua"
           os.execute("pandoc --from html --to plain " .. (page_file_name_base .. ".html"):enquote() .. " -o " .. (page_file_name_base .. ".txt"):enquote())
           os.execute("pandoc --from " .. plaintext_reader_path:enquote() .. " --to markdown " .. (page_file_name_base .. ".txt"):enquote() .. " -o " .. (page_file_name_base .. ".md"):enquote())
         else
@@ -349,7 +344,7 @@ local function concatenate_pages(config)
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    if not utility.exists(section_dir:sub(1, -2) .. ".md") then
+    if not utility.file_exists(section_dir:sub(1, -2) .. ".md") then
       utility.open(section_dir:sub(1, -2) .. ".md", "w")(function(section_file)
         check_page_counts(config, section, section_dir)
         for page = 1, config.page_counts[section - (config.sections.start - 1)] do
@@ -476,14 +471,14 @@ local function rm_page_files(config)
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    os.execute(utility.recursive_remove_command .. section_dir:sub(1, -2):enquote())
+    os.execute(utility.commands.recursive_remove .. section_dir:sub(1, -2):enquote())
   end
 end
 
 local function rm_all(config)
   print("\nRemoving all extra files...\n")
 
-  os.execute(utility.recursive_remove_command .. config.base_file_name:enquote())
+  os.execute(utility.commands.recursive_remove .. config.base_file_name:enquote())
   os.execute("rm " .. (config.base_file_name .. ".md"):enquote())
 end
 

@@ -1,4 +1,4 @@
-# .lua-files
+# lua-scripts
 Personally convenient Lua scripts to add to my path.
 
 ## Installation
@@ -13,6 +13,7 @@ Right now the only setting is `fa_cookie_string` which needs to be set to a stri
 Practically, this means something that looks like `a=<secret>; b=<secret>; sz=<secret>`.
 
 ## Scripts
+- [ ] This list needs to be updated, quite badly.
 - `2webm.lua`: Converts everything in the working directory to .webm files.
 - `llm.lua`: (Windows only!) A very WIP script for working with LLMs through WSL using [ollama](https://github.com/jmorganca/ollama).
 - `print-arguments.lua`: For testing how a Lua script receives arguments, because this can be platform-specific.
@@ -20,6 +21,22 @@ Practically, this means something that looks like `a=<secret>; b=<secret>; sz=<s
 - `test.lua`: (Dev Test) Used repeatedly while working on these scripts to verify minor details I'm forgetful about.
 - `utility-functions.lua`: (Library) Required for many of these scripts to run.
 - `video-dl.lua`: A few premade command lines for using `yt-dlp` to download what I want quicker.
+
+### 2epub-config.lua
+A utility to help automate the creation of configuration files for make-epub.
+It accepts a single argument, which can be an author's page (of the form
+https://www.literotica.com/authors/USERNAME/works/stories),  a series (like
+https://www.literotica.com/series/se/IDENTIFIER), or a file of URLs to the first
+pages of individual stories to make an anthology (if a line doesn't start with
+"http", it will be used as the title).
+
+For configs based on an author, a third argument being passed instructs the
+script to keep everything in one file instead of making separate entries for
+each series. This can cause issues due to UI inconsistencies on LitErotica.
+
+Due to caching issues, sometimes there can be mismatches between what you see in
+a browser and what this script pulls down. The output JSON is minified due to
+the library I'm using. (I may swap this out in the future.)
 
 ### make-epub.lua
 This script is only intended for personal use. Do not use it to infringe on copyright.

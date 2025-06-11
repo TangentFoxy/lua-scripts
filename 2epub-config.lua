@@ -4,13 +4,8 @@
 --   replaces the generate scripts, can take a list of individual stories to make an anthology, an authors' works page, or a series page
 --   author works are further split into series and a "Collected Works" for one-shots, unless a 2nd argument is passed
 
-local success, utility = pcall(function()
-  return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
-end)
-if not success then
-  print("\n\n" .. tostring(utility))
-  error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
-end
+package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
+local utility = require "utility"
 
 local htmlparser = utility.require("htmlparser")
 local json = utility.require("json")
@@ -51,7 +46,10 @@ end
 
 local function anthology(file_name)
   local _, _, extension = utility.split_path_components(file_name) -- extract base_file_name
-  config.base_file_name = file_name:sub(1, -(#extension+2)) -- TODO fix this, seems to be adding ".\\" or ".\" in front ?
+  config.base_file_name = file_name
+  if extension then
+    config.base_file_name = file_name:sub(1, -(#extension+2)) -- TODO fix this, seems to be adding ".\\" or ".\" in front ?
+  end
   config.title = config.base_file_name -- fallback title
 
   config.authors[1] = "Multiple Authors"
@@ -117,9 +115,9 @@ local function author(download_url, all_in_one)
   config.source_url = download_url
 
   local parser = get_parser_from_url(download_url)
-  config.authors[1] = parser:select("._header_title_dcvym_56")[1]:getcontent()
+  config.authors[1] = parser:select("._header_title_1rw38_66")[1]:getcontent() -- commit 1127e75 should have been this
   -- config.title = parser:select(".headline")[1]:getcontent() -- NOTE doesn't work, not sure why
-  config.title = config.authors[1] .. "'s Collected Works"
+  config.title = "Collected Works of " .. config.authors[1]
 
   local sections = parser:select("._item_title_zx1nh_223")
   for _, value in ipairs(sections) do
@@ -165,7 +163,7 @@ local function author(download_url, all_in_one)
 end
 
 -- main
-if utility.exists(arg[1]) then
+if utility.file_exists(arg[1]) then
   anthology(arg[1])
 elseif arg[1]:find("literotica%.com/authors/") then
   if not arg[1]:find("/works/stories") then

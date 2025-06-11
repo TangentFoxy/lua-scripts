@@ -26,24 +26,8 @@ local line = debug and function(lvl) return debug.getinfo(lvl or 2).currentline 
 local dbg = opts.debug and function(f,...) prn("d",f:gsub("#LINE#",str(line(3))),...) end or noop
 -- }}}
 -- Requires {{{
-
--- MODIFIED --
-
--- local ElementNode = require"htmlparser.ElementNode"
--- local voidelements = require"htmlparser.voidelements"
-local success, utility = pcall(function()
-	return dofile((arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "utility-functions.lua")
-end)
-if not success then
-	print("\n\n" .. tostring(utility))
-	error("\n\nThis script may be installed improperly. Follow instructions at:\n\thttps://github.com/TangentFoxy/.lua-files#installation\n")
-end
-
-local ElementNode = utility.require("htmlparser/ElementNode")
-local voidelements = utility.require("htmlparser/voidelements")
-
--- MODIFIED --
-
+local ElementNode = require"htmlparser.ElementNode"
+local voidelements = require"htmlparser.voidelements"
 --}}}
 local HtmlParser = {}
 local function parse(text,limit) -- {{{
