@@ -1,4 +1,8 @@
-PATH="$PATH:$PWD"
-export PATH
-# echo "export PATH=\"$PATH:$PWD\"" >> ~/.bashrc
-# TODO I need a version that won't create duplicates if it is already there!
+if [[ ":$PATH:" == *":$PWD:"* ]]; then
+  echo "lua-scripts is already in your \$PATH."
+else
+  echo "export PATH=\$PATH:$PWD" >> ~/.bashrc
+  sleep 1
+  source ~/.bashrc
+  echo "lua-scripts has been added to your \$PATH."
+fi
