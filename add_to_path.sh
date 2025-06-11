@@ -1,4 +1,4 @@
-if [[ ":$PATH:" == *":$PWD:"* ]]; then
+if echo "$PATH" | grep -q -E "(^|:)$current_dir(:|$)"; then
   echo "lua-scripts is already in your \$PATH."
 else
   echo "export PATH=\$PATH:$PWD" >> ~/.bashrc
