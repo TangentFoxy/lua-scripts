@@ -26,8 +26,8 @@ else
   }
 end
 
-utility.version = "1.0.0-locally-modified"
--- WARNING: This is suddenly returning "./" instead of the actual path!!!
+utility.version = "1.1.0"
+-- WARNING: This will return "./" if the original script is called locally instead of with an absolute path!
 utility.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) -- inspired by discussion in https://stackoverflow.com/q/6380820
 
 utility.require = function(...)
@@ -38,7 +38,6 @@ utility.require = function(...)
   return require(...)
 end
 
--- NOTE customized to cache results
 -- errors if specified program isn't in the path
 local _required_program_cache = {}
 utility.required_program = function(name)
@@ -254,7 +253,6 @@ utility.enumerate = function(list)
   return result
 end
 
--- WARNING customizations
 -- a super common need I'm encountering is wanting content from a URL without side effects
 utility.curl_read = function(download_url, curl_options)
   utility.required_program("curl")
