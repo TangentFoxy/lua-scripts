@@ -53,9 +53,9 @@ utility.open(options.index_file, "r")(function(file)
     output = output .. content[1]:getcontent() .. "\n"
 
     page.base_file_name = utility.make_safe_file_name(page.title)
-    local html_file_path = ("Stories" .. utility.path_separator .. page.base_file_name .. ".html"):enquote()
-    local epub_file_path = ("All ePubs" .. utility.path_separator .. page.base_file_name .. ".epub"):enquote()
-    utility.open(("Stories" .. utility.path_separator .. page.base_file_name .. ".html"), "w")(function(file)
+    local html_file_path = ("Stories" .. utility.path_separator .. page.base_file_name .. ".html")
+    local epub_file_path = ("All ePubs" .. utility.path_separator .. page.base_file_name .. ".epub")
+    utility.open(html_file_path, "w")(function(file)
       file:write(output)
     end)
 
@@ -66,7 +66,7 @@ utility.open(options.index_file, "r")(function(file)
       end
       file:write("---\n")
     end)
-    os.execute("pandoc --metadata-file metadata.yaml --from html --to epub " .. html_file_path .. " -o " .. epub_file_path .. " --toc=true")
+    os.execute("pandoc --metadata-file metadata.yaml --from html --to epub " .. html_file_path:enquote() .. " -o " .. epub_file_path:enquote() .. " --toc=true")
 
     os.execute("sleep " .. tostring(math.random(5)))
   end
