@@ -8,7 +8,7 @@ package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" ..
 local utility = require "utility"
 
 local htmlparser = utility.require("htmlparser")
-local json = utility.require("json")
+local json = utility.require("dkjson")
 
 local base_config = {
   authors = {},
@@ -30,7 +30,7 @@ local function save()
     print("! WARNING: Exporting a config with no sections. !\n  " .. config.base_file_name:enquote())
   end
   utility.open(config.base_file_name .. ".json", "w")(function(file)
-    file:write(json.encode(config) .. "\n")
+    file:write(json.encode(config, { indent = true }) .. "\n")
   end)
 end
 
