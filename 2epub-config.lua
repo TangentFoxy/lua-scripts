@@ -21,6 +21,8 @@ local config = utility.deepcopy(base_config) -- I know, I know, I'm doing state 
 
 local url_patterns = {
   series = "literotica%.com/series/se/",
+  author = "literotica%.com/authors/",
+  single = "literotica%.com/s/",
 }
 
 local function save()
@@ -110,6 +112,20 @@ local function series(download_url)
   save()
 end
 
+local function single(download_url)
+  config.source_url = download_url
+
+  local parser = get_parser_from_url(download_url)
+
+  config.authors[1] = parser:select(".y_eS > .y_eU")[1]:getcontent()
+  config.title = parser:select(".headline")[1]:getcontent():gsub("&#x27;", "'"):gsub("&amp;", "&"):gsub("’", "'")
+
+  config.sections[1] = download_url
+
+  config.base_file_name = utility.make_safe_file_name(config.title:gsub("&", "and") .. " by " .. config.authors[1])
+  save()
+end
+
 local function author(download_url, all_in_one)
   config.series = {}
   config.source_url = download_url
@@ -163,14 +179,19 @@ local function author(download_url, all_in_one)
 end
 
 -- main
-if utility.file_exists(arg[1]) then
-  anthology(arg[1])
-elseif arg[1]:find("literotica%.com/authors/") then
-  if not arg[1]:find("/works/stories") then
-    error(arg[1] .. " is missing /works/stories")
+local source, split = arg[1], arg[2]
+if utility.file_exists(source) then
+  anthology(source)
+elseif source:find(url_patterns.author) then
+  if not source:find("/works/stories") then
+    error(source .. " is missing /works/stories")
     -- /all pages redirect away from themselves, eliminating the point of having that be a URL endpoint..
   end
-  author(arg[1], arg[2])
-elseif arg[1]:find(url_patterns.series) then
-  series(arg[1])
+  author(source, split)
+elseif source:find(url_patterns.series) then
+  series(source)
+elseif source:find(url_patterns.single) then
+  single(source)
+else
+  error("\n\n Could not parse input! \n\n")
 end
