@@ -253,6 +253,10 @@ utility.enumerate = function(list)
   return result
 end
 
+utility.inspect = utility.require("inspect")
+
+
+
 -- a super common need I'm encountering is wanting content from a URL without side effects
 utility.curl_read = function(download_url, curl_options)
   utility.required_program("curl")

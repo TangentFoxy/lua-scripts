@@ -1,35 +1,21 @@
 #!/usr/bin/env luajit
 
-local help = [[Usage:
-
-  make-epub.lua <config (JSON file)> [action] [flag]
-
-If "." is used instead of a JSON file, every JSON file in the current directory
-will be used to make multiple ebooks back-to-back.
-
-[action]: If not specified, all steps will be taken in order (except cleanall).
-            download:  All pages will be downloaded to their own HTML files.
-            convert:   Each page is converted to Markdown.
-            concat:    A file is created for each section out of its pages.
-            markdown:  Metadata frontmatter and Markdown section files will be
-                       concatenated into a single Markdown file.
-            epub:      Markdown file will be converted to an ePub using pandoc.
-            cleanpage: All page files will be deleted, along with their extra
-                       directories.
-            cleanall:  Deletes everything except the config file and ePub.
-
-[flag]: If "--continue" is passed, script will continue with the default order
-          of actions from the action specified.
-
-Requirements:
-- Binaries:      pandoc, curl
-
-For how to write a configuration and examples, see the .lua-files README:
-  https://github.com/TangentFoxy/.lua-files#make-epublua
-]]
-
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
 local utility = require "utility"
+local argparse = utility.require("argparse")
+
+local parser = argparse():description("Makes ebooks based on JSON configurations.")
+  :epilog("For basic examples and the config format, see README:\n  https://github.com/TangentFoxy/lua-scripts#make-epublua")
+parser:argument("config", "JSON config file. If \".\", will run on all JSON files in the current directory."):args(1)
+parser:argument("action", "If not specified, all actions except \"cleanall\" will be taken in order. See README for more info.")
+  :choices{"download", "convert", "concat", "markdown", "epub", "cleanpage", "cleanall"}:args("?")
+parser:flag("--halt", "Stop after completing the specified action."):overwrite(false)
+local options = parser:parse()
+
+
+
+utility.required_program("pandoc")
+utility.required_program("curl")
 
 local path_separator = utility.path_separator
 local copyright_warning = "This ebook was created by an automated tool for personal use. It cannot be distributed or sold without permission of its copyright holder(s). (If you did not make this ebook, you may be infringing.)\n\n"
@@ -210,6 +196,7 @@ local function get_current_domain(url)
   end
 
   -- NOTE/TODO this doesn't allow specifying custom selectors, which should overwrite and ignore this error
+  --   NOTE I've been using this script successfully with custom selectors without this error occurring
   if not current_domain then
     error("\nThe domain of " .. url:enquote() .. " is not supported.\n")
   end
@@ -482,24 +469,8 @@ local function rm_all(config)
   os.execute("rm " .. (config.base_file_name .. ".md"):enquote())
 end
 
-local function argparse(arguments, positional_arguments)
-  local recognized_arguments = {}
-  for index, argument in ipairs(arguments) do
-    for _, help_command in ipairs({"-h", "--help", "/?", "/help", "help"}) do
-      if argument == help_command then
-        print(help)
-        return nil
-      end
-    end
-    if positional_arguments[index] then
-      recognized_arguments[positional_arguments[index]] = argument
-    end
-  end
-  return recognized_arguments
-end
-
 local function main(arguments)
-  local config = utility.open(arguments.json_file_name, "r")(function(config_file)
+  local config = utility.open(arguments.config, "r")(function(config_file)
     return load_config(config_file:read("*all"))
   end)
 
@@ -534,7 +505,7 @@ local function main(arguments)
   if arguments.action then
     if actions[arguments.action] then
       actions[arguments.action](config)
-      if arguments.flag == "--continue" then
+      if not arguments.halt then
         local starting_point_reached = false
         for _, action in ipairs(default_action_order) do
           if starting_point_reached then
@@ -544,9 +515,6 @@ local function main(arguments)
           end
         end
       end
-    else
-      print(help)
-      error("\nInvalid action specified.")
     end
   else
     for _, action in ipairs(default_action_order) do
@@ -557,21 +525,13 @@ local function main(arguments)
   return true
 end
 
-local positional_arguments = {"json_file_name", "action", "flag"}
-local arguments = argparse(arg, positional_arguments)
-if not arguments then return end -- help text must've been printed, exit
-if not arguments.json_file_name then
-  print(help)
-  error("\nA config file name/path must be specified.")
-end
-
-if arguments.json_file_name == "." then
+if options.config == "." then
   utility.ls(".")(function(file_name)
     if file_name:find(".json$") then
-      arguments.json_file_name = file_name
-      main(arguments)
+      options.config = file_name
+      main(options)
     end
   end)
 else
-  return main(arguments)
+  main(options)
 end
