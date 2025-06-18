@@ -225,7 +225,6 @@ end
 local function download_pages(config)
   print("\nDownloading pages...\n")
   local htmlparser = utility.require("htmlparser")
-  utility.required_program("curl")
 
   os.execute("mkdir " .. config.base_file_name:enquote())
   for section = config.sections.start, config.sections.finish do
@@ -245,53 +244,36 @@ local function download_pages(config)
           download_url = section_url .. "?page=" .. tostring(page)
         end
 
-        local temporary_html_file_name
         if config.discover_page_counts then
-          local exists
-          temporary_html_file_name = utility.tmp_file_name()
-          os.execute("curl -I " ..download_url:enquote() .. " > " .. temporary_html_file_name)
-          utility.open(temporary_html_file_name, "r", "Could not receive HEAD request: " .. download_url:enquote())(function(html_file)
-            local raw_html = html_file:read("*all")
-            if raw_html:find("404 Not Found") or raw_html:find("HTTP/2 404") then
-              exists = false
-            else
-              exists = true
-            end
-          end)
-          os.execute("rm " .. temporary_html_file_name)
-          if not exists then
+          local raw_html = utility.curl_read(download_url, "-I")
+          if raw_html:find("404 Not Found") or raw_html:find("HTTP/2 404") then
             config.page_counts[section - (config.sections.start - 1)] = page - 1
             break
           end
         end
 
-        temporary_html_file_name = utility.tmp_file_name()
+        local raw_html
         if current_domain.name == "furaffinity.net" then
-          local fa_cookie_string = assert(utility.get_config().fa_cookie_string, "You are missing FurAffinity cookies in config. See .lua-files README.")
-          os.execute("curl --cookie " .. fa_cookie_string:enquote() .. " " .. download_url:enquote() .. " > " .. temporary_html_file_name)
+          local fa_cookie_string = assert(utility.get_config().fa_cookie_string, "You are missing FurAffinity cookies in config. See README.")
+          raw_html = utility.curl_read(download_url, "--cookie " .. fa_cookie_string:enquote())
         else
-          os.execute("curl " .. download_url:enquote() .. " > " .. temporary_html_file_name)
+          raw_html = utility.curl_read(download_url)
         end
 
-        utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(html_file)
-          local raw_html = html_file:read("*all")
+        local parser = htmlparser.parse(raw_html, 100000)
+        local content_tag = parser:select(config.custom_content_selector or current_domain.content_selector)
+        local text = content_tag[1]:getcontent()
 
-          local parser = htmlparser.parse(raw_html, 100000)
-          local content_tag = parser:select(config.custom_content_selector or current_domain.content_selector)
-          local text = content_tag[1]:getcontent()
-
-          if page == 1 and config.extract_titles then
-            if current_domain.title_selector then
-              text = parser:select(current_domain.title_selector)[1]:gettext() .. text
-            end
+        if page == 1 and config.extract_titles then
+          if current_domain.title_selector then
+            text = parser:select(current_domain.title_selector)[1]:gettext() .. text
           end
+        end
 
-          utility.open(section_dir .. page .. ".html", "w")(function(page_file)
-            page_file:write(text .. "\n")
-          end)
+        utility.open(section_dir .. page .. ".html", "w")(function(page_file)
+          page_file:write(text .. "\n")
         end)
 
-        os.execute("rm " .. temporary_html_file_name)
         os.execute("sleep " .. tostring(math.random(5))) -- avoid rate limiting
       end
     end
