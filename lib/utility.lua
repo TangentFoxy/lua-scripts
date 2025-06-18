@@ -20,7 +20,7 @@ else
     temp_directory = "/tmp/",
     commands = {
       recursive_remove = "rm -r ",
-      list = "ls -1",
+      list = "ls -1a",
       which = "which ",
     },
   }
@@ -187,9 +187,24 @@ utility.ls = function(path)
   end
 end
 
-utility.file_exists = function(file_name)
+utility.path_exists = function(file_name)
   local file = io.open(file_name, "r")
   if file then file:close() return true else return false end
+end
+utility.file_exists = utility.path_exists -- TEMP need to stop using this!
+
+utility.is_file = function(file_name)
+  local file = io.open(file_name, "r")
+  if file then
+    local _, error_message = file:read(1) -- defaults to reading a whole line, so we read 1 byte instead
+    file:close()
+    if error_message == "Is a directory" then
+      return false
+    end
+    return true
+  else
+    return false
+  end
 end
 
 utility.escape_quotes_and_escapes = function(input)

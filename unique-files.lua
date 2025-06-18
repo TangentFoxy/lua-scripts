@@ -1,9 +1,58 @@
 #!/usr/bin/env luajit
 
--- Partially written by ChatGPT using GPT-3.5, with corrections and modifications by me.
+-- Partially written by ChatGPT using GPT-3.5, with fixes/mods by Tangent Fox.
 -- Do whatever the hell you want with it.
 
-local lfs = require "lfs"
+-- Previously only tested on Windows.
+-- Now should work on any system, even if LuaFileSystem isn't installed!
+
+local path_separator = package.config:sub(1, 1)
+
+local success, lfs = pcall(function() return require "lfs" end)
+
+if not success then
+  math.randomseed(os.time())
+
+  local system
+  if path_separator == "\\" then
+    system = {
+      temp = "C:\\Windows\\Temp\\",
+      list = "dir /w /b",
+    }
+  else
+    system = {
+      temp = "/tmp/",
+      list = "ls -1a",
+    }
+  end
+
+  lfs = {
+    dir = function(path)
+      local file_name = system.temp .. math.random()
+      os.execute(system.list .. " \"" .. path .. "\" > \"" .. file_name .. "\"")
+      local file = io.open(file_name, "r")
+      local output = file:read("*all")
+      file:close()
+      os.execute("rm \"" .. file_name .. "\"")
+      return output:gmatch("[^\r\n]+")
+    end,
+    attributes = function(path)
+      local file = io.open(path, "r")
+      if file then
+        local _, error_message = file:read(1) -- defaults to reading a whole line, so we read 1 byte instead
+        file:close()
+        if error_message == "Is a directory" then
+          return { mode = "directory" }
+        end
+        return { mode = "file" }
+      else
+        return { mode = "directory" }
+      end
+    end,
+  }
+end
+
+
 
 -- Function to get the filesize of a given file
 local function get_filesize(filepath)
@@ -23,7 +72,7 @@ local function traverse_directory(path)
 
   for entry in lfs.dir(path) do
     if entry ~= "." and entry ~= ".." then
-      local full_path = path..'\\'..entry
+      local full_path = path .. path_separator .. entry
       local attributes = lfs.attributes(full_path)
 
       if attributes and attributes.mode == "file" then
