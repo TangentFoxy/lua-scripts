@@ -9,8 +9,9 @@ if package.config:sub(1, 1) == "\\" then
     temp_directory = "C:\\Windows\\Temp\\",
     commands = {
       recursive_remove = "rmdir /s /q ",
-      list = "dir /w /b",
+      list = "dir /w /b ",
       which = "where ",
+      move = "move ",
     },
   }
 else
@@ -20,8 +21,9 @@ else
     temp_directory = "/tmp/",
     commands = {
       recursive_remove = "rm -r ",
-      list = "ls -1a",
+      list = "ls -1a ",
       which = "which ",
+      move = "mv ",
     },
   }
 end
