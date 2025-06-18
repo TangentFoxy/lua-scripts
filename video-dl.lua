@@ -1,42 +1,32 @@
 #!/usr/bin/env luajit
 
-local help = [[Usage:
-
-  video-dl.lua [action] [--file] <url>
-
-[action]: What is desired.
-            video (default): Highest quality video (maximum 720p).
-            backup, clone, copy: English subtitles (including automatic
-              subtitles), thumbnail, description, highest quality video
-              (maximum 720p).
-            music, audio: Highest quality audio only.
-            metadata, meta: English subtitles (including automatic
-              subtitles), thumbnail, description.
-[--file]: <url> is actually a file of URLs to open and execute [action]
-            on each.
-<url>:    Source. YouTube URL expected, but should work with anything
-            yt-dlp works with.
+local helptext = [[
+Actions:
+  video:               Highest quality video (maximum 720p).
+  backup, clone, copy: English subtitles (including automatic subtitles),
+                       thumbnail, description, highest quality video (max 720p).
+  music, audio:        Highest quality audio only.
+  metadata, meta:      English subtitles (including automatic subtitles),
+                       thumbnail, description.
 ]]
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
 local utility = require "utility"
+local argparse = utility.require("argparse")
+
+local parser = argparse():description("Download media and metadata from anything supported by YT-DLP."):epilog(helptext)
+parser:argument("action", "What media and/or metadata to select."):choices{"video", "backup", "clone", "copy", "music", "audio", "metadata", "meta"}
+  :default("video"):defmode("arg"):args("?")
+parser:flag("--file", "The URL specified is actually a file of one URL per line to be processed.")
+parser:argument("url", "Source URL. Can be from anywhere supported by YT-DLP."):args(1)
+local options = parser:parse()
+
+-- BUG even though this is specified as an optional argument, argparse won't handle it correctly
+if not options.action then options.action = "video" end
+
+
 
 utility.required_program("yt-dlp")
-
-local action, url
-
-if #arg < 2 then
-  if arg[1]:find("help") then
-    print(help)
-    return false
-  end
-  action = "video"
-  url = arg[1]
-else
-  action = arg[1]
-  url = arg[2]
-  -- "--file" is handled just before execution
-end
 
 local core_command = "yt-dlp --retries 100 "
 local metadata_options = "--write-sub --write-auto-sub --sub-lang \"en.*\" --write-thumbnail --write-description "
@@ -61,18 +51,12 @@ execute.copy = execute.backup
 execute.audio = execute.music
 execute.meta = execute.metadata
 
-if execute[action] then
-  if url == "--file" then
-    pcall(function()
-      for line in io.lines(arg[3]) do
-        execute[action](line)
-      end
-    end)
-  else
-    execute[action](url)
-  end
+if options.file then
+  pcall(function()
+    for line in io.lines(options.url) do
+      execute[options.action](line)
+    end
+  end)
 else
-  print("Invalid [action]")
-  print("Received:", "action", action, "url", url)
-  return false
+  execute[options.action](options.url)
 end
