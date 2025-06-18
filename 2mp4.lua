@@ -1,37 +1,33 @@
 #!/usr/bin/env luajit
 
-local help = [[Usage:
-
-  2mp4.lua [threads=1]
-
-Converts everything in the local directory to mp4, placed in "./2mp4-output".
-(Defaults to using only a single thread to reduce impact on the system.)
-
-[threads]: Number of threads ffmpeg will be assigned.
-           If a non-number value, ffmpeg's -threads flag will not be used.
-]]
-
-if arg[1] and arg[1]:find("help") then
-  print(help)
-  return false
-end
-
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
 local utility = require "utility"
+local argparse = utility.require("argparse")
+
+local parser = argparse():description("Converts everything in the local directory to mp4, placed in \"./2mp4-output\".")
+-- BUG argparse will not set the default number of threads I told it to (this is outdated anyhow)
+-- parser:argument("threads", "Number of threads ffmpeg will be assigned."):default(1):defmode("arg"):convert(tonumber):args("?")
+parser:argument("threads", "Number of threads ffmpeg will be assigned."):convert(tonumber):args("?")
+local options = parser:parse()
+
+
 
 utility.required_program("ffmpeg")
-
-local threads = tonumber(arg[1]) or arg[1] or 1
 
 local for_files = utility.ls()
 os.execute("mkdir 2mp4-output")
 
 for_files(function(file_name)
+  local _, name, extension = utility.split_path_components(file_name)
+  if extension then
+    name = name:sub(1, -(#extension + 2))
+  end
+
   local command
-  if type(threads) == "number" then
-    command = "ffmpeg -threads " .. threads .. " -i \"" .. file_name .. "\" -threads " .. threads .. " \"2mp4-output/" .. file_name .. ".mp4\""
+  if options.threads then
+    command = "ffmpeg -threads " .. options.threads .. " -i \"" .. file_name .. "\" -threads " .. options.threads .. " \"2mp4-output/" .. name .. ".mp4\""
   else
-    command = "ffmpeg -i \"" .. file_name .. "\" \"2mp4-output/" .. file_name .. ".mp4\""
+    command = "ffmpeg -i \"" .. file_name .. "\" \"2mp4-output/" .. name .. ".mp4\""
   end
 
   os.execute(command)
