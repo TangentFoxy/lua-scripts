@@ -40,25 +40,19 @@ local function save()
   if #config.sections == 0 then
     print("! WARNING: Exporting a config with no sections. !\n  " .. config.base_file_name:enquote())
   end
-  utility.open(config.base_file_name .. ".json", "w")(function(file)
+  local config_file_name = config.base_file_name .. ".json"
+  utility.open(config_file_name, "w")(function(file)
     file:write(json.encode(config, { indent = true }) .. "\n")
   end)
 
   if options.make_epub then
-    os.execute("make-epub.lua " .. config.base_file_name .. ".json")
+    os.execute("make-epub.lua " .. config_file_name:enquote())
   end
 end
 
 local function get_parser_from_url(download_url)
-  local parser
-  local temporary_html_file_name = utility.tmp_file_name()
-  os.execute("curl " ..download_url:enquote() .. " > " .. temporary_html_file_name)
-  utility.open(temporary_html_file_name, "r", "Could not download " .. download_url:enquote())(function(file)
-    local raw_html = file:read("*all")
-    parser = htmlparser.parse(raw_html, 100000)
-  end)
-  os.execute("rm " ..temporary_html_file_name)
-  return parser
+  local raw_html = utility.curl_read(download_url)
+  return htmlparser.parse(raw_html, 100000)
 end
 
 local function anthology(file_name)
