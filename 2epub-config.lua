@@ -9,6 +9,15 @@ local utility = require "utility"
 
 local htmlparser = utility.require("htmlparser")
 local json = utility.require("dkjson")
+local argparse = utility.require("argparse")
+
+local parser = argparse()
+parser:argument("source", "Source URL (from LitErotica.com)"):args(1)
+parser:argument("all_in_one", "For artist pages only, if ANY 2nd argument is passed, series will not be split into their own files."):args("?")
+parser:flag("--make-epub", "Run make-epub automatically."):overwrite(false)
+local options = parser:parse()
+
+
 
 local base_config = {
   authors = {},
@@ -25,6 +34,8 @@ local url_patterns = {
   single = "literotica%.com/s/",
 }
 
+
+
 local function save()
   if #config.sections == 0 then
     print("! WARNING: Exporting a config with no sections. !\n  " .. config.base_file_name:enquote())
@@ -32,6 +43,10 @@ local function save()
   utility.open(config.base_file_name .. ".json", "w")(function(file)
     file:write(json.encode(config, { indent = true }) .. "\n")
   end)
+
+  if options.make_epub then
+    os.execute("make-epub.lua " .. config.base_file_name .. ".json")
+  end
 end
 
 local function get_parser_from_url(download_url)
@@ -127,7 +142,7 @@ local function single(download_url)
 end
 
 local function author(download_url, all_in_one)
-  config.series = {}
+  config.series = {} -- TODO what happens if there are no series? is an empty table saved? should it be saved?
   config.source_url = download_url
 
   local parser = get_parser_from_url(download_url)
@@ -148,7 +163,7 @@ local function author(download_url, all_in_one)
   config.base_file_name = utility.make_safe_file_name(config.title)
 
   if next(config.series) then
-    if all_in_one then
+    if all_in_one ~= nil then
       print("! SERIES MAY NOT BE HANDLED CORRECTLY !")
     else
       -- this is VERY hack
@@ -178,20 +193,21 @@ local function author(download_url, all_in_one)
   save()
 end
 
+
+
 -- main
-local source, split = arg[1], arg[2]
-if utility.file_exists(source) then
-  anthology(source)
-elseif source:find(url_patterns.author) then
-  if not source:find("/works/stories") then
-    error(source .. " is missing /works/stories")
+if utility.file_exists(options.source) then
+  anthology(options.source)
+elseif options.source:find(url_patterns.author) then
+  if not options.source:find("/works/stories") then
+    error(options.source .. " is missing /works/stories")
     -- /all pages redirect away from themselves, eliminating the point of having that be a URL endpoint..
   end
-  author(source, split)
-elseif source:find(url_patterns.series) then
-  series(source)
-elseif source:find(url_patterns.single) then
-  single(source)
+  author(options.source, options.all_in_one)
+elseif options.source:find(url_patterns.series) then
+  series(options.source)
+elseif options.source:find(url_patterns.single) then
+  single(options.source)
 else
-  error("\n\n Could not parse input! \n\n")
+  error("\n\n <source> is invalid. (Must be from LitErotica.) \n\n")
 end
