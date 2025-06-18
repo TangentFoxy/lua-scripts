@@ -6,6 +6,8 @@ local utility = require "utility"
 local htmlparser = require "htmlparser"
 local json = require "json"
 
+utility.required_program("pandoc")
+
 local options = utility.open(arg[1], "r")(function(file)
   return json.decode(file:read("*all"))
 end)
