@@ -26,7 +26,7 @@ else
   }
 end
 
-utility.version = "1.1.0"
+utility.version = "1.1.0-locally-modified"
 -- WARNING: This will return "./" if the original script is called locally instead of with an absolute path!
 utility.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) -- inspired by discussion in https://stackoverflow.com/q/6380820
 
@@ -207,7 +207,7 @@ utility.get_config = function()
     local config_path = utility.path .. "config.json"
     if utility.file_exists(config_path) then
       utility.open(config_path, "r")(function(config_file)
-        local json = utility.require("json")
+        local json = utility.require("dkjson")
         config = json.decode(config_file:read("*all"))
       end)
     else
@@ -220,8 +220,8 @@ end
 utility.save_config = function()
   if config then
     utility.open(utility.path .. "config.json", "w")(function(config_file)
-      local json = utility.require("json")
-      config_file:write(json.encode(config))
+      local json = utility.require("dkjson")
+      config_file:write(json.encode(config, { indent = true }))
     end)
   else
     error("utility config not loaded")
