@@ -1,13 +1,27 @@
 #!/usr/bin/env luajit
 
+local helptext = [[
+Actions:
+  download:  All pages will be downloaded to their own HTML files.
+  convert:   Each page is converted to Markdown.
+  concat:    A file is created for each section out of its pages.
+  markdown:  Metadata frontmatter and Markdown section files will be
+             concatenated into a single Markdown file.
+  epub:      Markdown file will be converted to an ePub using pandoc.
+  cleanpage: All page files will be deleted, along with their extra directories.
+  cleanall:  Deletes everything except the config file and ePub.
+
+For basic examples and the config format, see README:
+  https://github.com/TangentFoxy/lua-scripts#make-epublua
+]]
+
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
 local utility = require "utility"
 local argparse = utility.require("argparse")
 
-local parser = argparse():description("Makes ebooks based on JSON configurations.")
-  :epilog("For basic examples and the config format, see README:\n  https://github.com/TangentFoxy/lua-scripts#make-epublua")
+local parser = argparse():description("Makes ebooks based on JSON configurations."):epilog(helptext)
 parser:argument("config", "JSON config file. If \".\", will run on all JSON files in the current directory."):args(1)
-parser:argument("action", "If not specified, all actions except \"cleanall\" will be taken in order. See README for more info.")
+parser:argument("action", "If not specified, all actions except \"cleanall\" will be taken in order.")
   :choices{"download", "convert", "concat", "markdown", "epub", "cleanpage", "cleanall"}:args("?")
 parser:flag("--halt", "Stop after completing the specified action."):overwrite(false)
 local options = parser:parse()
