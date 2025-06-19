@@ -297,7 +297,6 @@ end
 
 local function convert_pages(config)
   print("\nConverting pages...\n")
-  utility.required_program("pandoc")
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
@@ -436,7 +435,6 @@ end
 
 local function make_epub(config)
   print("\nMaking ePub...\n")
-  utility.required_program("pandoc")
   local output_dir = "All ePubs"
   os.execute("mkdir " .. output_dir:enquote())
 
