@@ -12,7 +12,8 @@ local json = utility.require("dkjson")
 local argparse = utility.require("argparse")
 
 local parser = argparse()
-parser:argument("source", "Source URL (from LitErotica.com)"):args(1)
+  :description("source argument can be an HTML file from an author's page, or a URL to an author's page, or a URL to a series page, or a single story's URL, or a text file of URLs (one per line) to make an anthology (a non-URL line will be used as the title).")
+parser:argument("source", "Source (URL, or HTML file of author page, or text file of URLs)"):args(1)
 parser:argument("all_in_one", "For artist pages only, if ANY 2nd argument is passed, series will not be split into their own files."):args("?")
 parser:flag("--make-epub", "Run make-epub automatically."):overwrite(false)
 local options = parser:parse()
@@ -136,10 +137,16 @@ local function single(download_url)
 end
 
 local function author(download_url, all_in_one)
-  config.series = {} -- TODO what happens if there are no series? is an empty table saved? should it be saved?
-  config.source_url = download_url
+  local parser
 
-  local parser = get_parser_from_url(download_url)
+  config.series = {}
+  if download_url:sub(1, 4):lower() == "http" then
+    config.source_url = download_url
+    parser = get_parser_from_url(download_url)
+  else
+    parser = htmlparser.parse(download_url, 100000)
+  end
+
   config.authors[1] = parser:select("._header_title_1rw38_66")[1]:getcontent() -- commit 1127e75 should have been this
   -- config.title = parser:select(".headline")[1]:getcontent() -- NOTE doesn't work, not sure why
   config.title = "Collected Works of " .. config.authors[1]
@@ -191,7 +198,17 @@ end
 
 -- main
 if utility.file_exists(options.source) then
-  anthology(options.source)
+  local is_html = false
+  utility.open(options.source, "r")(function(file)
+    local contents = file:read("*all")
+    is_html = contents:find("<.-html>")
+    if is_html then
+      author(contents, options.all_in_one)
+    end
+  end)
+  if not is_html then
+    anthology(options.source)
+  end
 elseif options.source:find(url_patterns.author) then
   if not options.source:find("/works/stories") then
     error(options.source .. " is missing /works/stories")

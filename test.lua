@@ -4,7 +4,6 @@ package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" ..
 local utility = require "utility"
 
 -- NOTE add current test case here
-local file_name = "/some/path/file.ext"
-local path, name, extension = utility.split_path_components(file_name)
-print(path, name, extension)
-print(name:sub(1, -(#extension + 2)))
+utility.open("2webm.lua", "r")(function(file)
+  file:close() -- double closing a file handle shouldn't error... right? Nope! It errors!
+end)

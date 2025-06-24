@@ -22,12 +22,9 @@ local function equal_array_lengths(...)
   return true
 end
 
-os.execute("mkdir -p Stories")
-os.execute("mkdir -p \"All ePubs\"")
-
 utility.open(options.index_file, "r")(function(file)
   local html_text = file:read("*all")
-  local parser = htmlparser.parse(html_text, 10000)
+  local parser = htmlparser.parse(html_text, 100000)
 
   local titles = parser:select(options.title_pattern)
   local links = parser:select(options.link_pattern)
@@ -35,8 +32,16 @@ utility.open(options.index_file, "r")(function(file)
   local metadata = parser:select(options.metadata_pattern)
 
   if not equal_array_lengths(titles, links, date, metadata) then
-    error("Selectors did not get the same number of items across each type.")
+    local output = {
+      "\n", "Selectors did not get the same number of items across each type.",
+      #titles, #links, #date, #metadata,
+      "",
+    }
+    error(table.concat(output, "\n"))
   end
+
+  os.execute("mkdir -p Stories")
+  os.execute("mkdir -p \"All ePubs\"")
 
   for index in ipairs(titles) do
     local page = {
