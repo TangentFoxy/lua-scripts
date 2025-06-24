@@ -166,6 +166,8 @@ local function author(download_url, all_in_one)
   if next(config.series) then
     if all_in_one ~= nil then
       print("! SERIES MAY NOT BE HANDLED CORRECTLY !")
+      config.title = config.authors[1] .. " Omnibus"
+      config.base_file_name = utility.make_safe_file_name(config.title)
     else
       -- this is VERY hack
       local original_config = config
