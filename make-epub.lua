@@ -237,7 +237,6 @@ local function download_pages(config)
       local current_domain = get_current_domain(section_url)
 
       for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-        -- NOTE this may break the exported JSON of page_counts when discover_page_counts is enabled and the script was interrupted
         if utility.file_exists(section_dir .. page .. ".html") then
           break -- skip downloading pages we already have!
         end
