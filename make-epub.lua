@@ -237,6 +237,11 @@ local function download_pages(config)
       local current_domain = get_current_domain(section_url)
 
       for page = 1, config.page_counts[section - (config.sections.start - 1)] do
+        -- NOTE this may break the exported JSON of page_counts when discover_page_counts is enabled and the script was interrupted
+        if utility.file_exists(section_dir .. page .. ".html") then
+          break -- skip downloading pages we already have!
+        end
+
         local download_url
         if page == 1 then
           download_url = section_url
@@ -285,7 +290,10 @@ local function check_page_counts(config, section, section_dir)
   if config.page_counts[section - (config.sections.start - 1)] == absurdly_high_number then
     local _pages = {}
     utility.ls(section_dir)(function(item)
-      local _number = tonumber(item)
+      local _, _number, file_extension = utility.split_path_components(item) -- file name will be a number
+      if file_extension then
+        _number = tonumber(_number:sub(1, -(#file_extension+2)))
+      end
       if _number then
         table.insert(_pages, _number)
       end
