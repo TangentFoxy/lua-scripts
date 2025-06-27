@@ -4,6 +4,6 @@ package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" ..
 local utility = require "utility"
 
 -- NOTE add current test case here
-utility.open("2webm.lua", "r")(function(file)
-  file:close() -- double closing a file handle shouldn't error... right? Nope! It errors!
-end)
+local config = utility.get_config()
+config.test_value = true -- both making sure the new locks appear to work, and that saving new data still works
+utility.save_config()

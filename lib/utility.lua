@@ -218,11 +218,49 @@ end
 
 
 
-local config
+-- only use for brief loads/saves, as this will block until a lock can be established
+function utility.get_lock(file_path)
+  local lock_obtained, lock_uuid, lock_file_path = false, utility.uuid(), file_path .. ".lock"
+  repeat
+    if not utility.file_exists(lock_file_path) then
+      pcall(function()
+        utility.open(lock_file_path, "w")(function(file)
+          file:write(lock_uuid)
+        end)
+        utility.open(lock_file_path, "r")(function(file)
+          if file:read("*all") == lock_uuid then
+            lock_obtained = true
+          end
+        end)
+      end)
+    end
+    if not lock_obtained then
+      os.execute("sleep 1")
+    end
+  until lock_obtained
+  return lock_uuid
+end
+
+function utility.release_lock(file_path, lock_uuid)
+  local lock_file_path = file_path .. ".lock"
+  if lock_uuid then
+    utility.open(lock_file_path, "r")(function(file)
+      if not file:read("*all") == lock_uuid then
+        error("\n\n Lock UUID changed while lock was obtained. Data loss may have occurred. \n\n")
+      end
+    end)
+  end
+  os.execute("rm " .. lock_file_path:enquote())
+end
+
+
+
+local config, config_lock
 utility.get_config = function()
   if not config then
     local config_path = utility.path .. "config.json"
     if utility.file_exists(config_path) then
+      config_lock = utility.get_lock(config_path)
       utility.open(config_path, "r")(function(config_file)
         local json = utility.require("dkjson")
         config = json.decode(config_file:read("*all"))
@@ -236,10 +274,17 @@ end
 
 utility.save_config = function()
   if config then
-    utility.open(utility.path .. "config.json", "w")(function(config_file)
+    local config_path = utility.path .. "config.json"
+    if not config_lock then
+      print("Warning: A config lock file was not established.")
+    end
+    utility.open(config_path, "w")(function(config_file)
       local json = utility.require("dkjson")
       config_file:write(json.encode(config, { indent = true }))
     end)
+    if config_lock then
+      utility.release_lock(config_path, config_lock)
+    end
   else
     error("utility config not loaded")
   end
