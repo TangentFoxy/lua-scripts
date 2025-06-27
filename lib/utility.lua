@@ -12,6 +12,7 @@ if package.config:sub(1, 1) == "\\" then
       list = "dir /w /b ",
       which = "where ",
       move = "move ",
+      silence_output = " >nul 2>nul",
     },
   }
 else
@@ -24,6 +25,7 @@ else
       list = "ls -1a ",
       which = "which ",
       move = "mv ",
+      silence_output = " >/dev/null 2>/dev/null",
     },
   }
 end
@@ -46,7 +48,7 @@ utility.required_program = function(name)
   if _required_program_cache[name] then
     return true
   end
-  if os.execute(utility.commands.which .. tostring(name)) == 0 then
+  if os.execute(utility.commands.which .. tostring(name) .. utility.commands.silence_output) == 0 then
     _required_program_cache[name] = true
   else
     error("\n\n" .. tostring(name) .. " must be installed and in the path\n")
@@ -158,17 +160,25 @@ end
 
 -- wrapper around io.open to prevent leaving a file handle open accidentally
 -- throws errors instead of returning them
---   usage: utility.open()(function(file_handle) --[[ your code ]] end)
-utility.open = function(file_name, mode)
+--   usage: utility.open(file_name, mode, function(file) --[[ your code ]] end)
+--       or utility.open(file_name, mode)(function(file_handle) --[[ your code ]] end)
+function utility.open(file_name, mode, func)
   local file, err = io.open(file_name, mode)
   if not file then error(err) end
-  return function(fn)
-    local success, result = pcall(function() return fn(file) end)
+  if func then
+    local success, result = pcall(function() return func(file) end)
     file:close()
-    if not success then
-      error(result)
-    end
+    if not success then error(result) end
     return result
+  else
+    return function(fn)
+      local success, result = pcall(function() return fn(file) end)
+      file:close()
+      if not success then
+        error(result)
+      end
+      return result
+    end
   end
 end
 
@@ -219,6 +229,7 @@ end
 
 
 -- only use for brief loads/saves, as this will block until a lock can be established
+-- returns a UUID that can be checked on release to make sure unforeseen errors did not occur
 function utility.get_lock(file_path)
   local lock_obtained, lock_uuid, lock_file_path = false, utility.uuid(), file_path .. ".lock"
   repeat
@@ -241,6 +252,7 @@ function utility.get_lock(file_path)
   return lock_uuid
 end
 
+-- specifying lock_uuid is optional, to error if a conflict occurred despite the lock (should not be possible)
 function utility.release_lock(file_path, lock_uuid)
   local lock_file_path = file_path .. ".lock"
   if lock_uuid then
