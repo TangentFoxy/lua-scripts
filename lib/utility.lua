@@ -341,7 +341,7 @@ utility.curl_read = function(download_url, curl_options)
   end
   os.execute(command .. download_url:enquote() .. " > " .. tmp_file_name)
   local file_contents
-  utility.open(tmp_file_name, "r", "Could not download " .. download_url:enquote())(function(file)
+  utility.open(tmp_file_name, "r")(function(file)
     file_contents = file:read("*all")
   end)
   return file_contents

@@ -23,15 +23,17 @@ end
 
 
 utility.required_program("pandoc")
+utility.required_program("xelatex")
 
 local for_files = utility.ls()
 os.execute("mkdir 2pdf-output")
 
 for_files(function(file_name)
+  if file_name == "." or file_name == ".." then return end
   local _, name, extension = utility.split_path_components(file_name)
   if extension then
     name = name:sub(1, -(#extension + 2))
   end
 
-  os.execute("pandoc \"" .. file_name .. "\" -o \"2pdf-output/" .. name .. ".pdf\"")
+  os.execute("pandoc --pdf-engine xelatex \"" .. file_name .. "\" -o \"2pdf-output/" .. name .. ".pdf\"")
 end)
