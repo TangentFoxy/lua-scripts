@@ -34,7 +34,7 @@ utility.required_program("ollama")
 
 local function query_model(model, prompt)
   if prompt then
-    return utility.capture("ollama run " .. model .. " --nowordwrap " .. prompt:enquote())
+    return utility.capture_safe("ollama run " .. model .. " --nowordwrap " .. prompt:enquote())
   else -- interactive
     return os.execute("ollama run " .. model)
   end
@@ -42,7 +42,7 @@ end
 
 local function create_model(model, modelfile)
   if not modelfile then modelfile = model end
-  if utility.file_exists(modelfile) then
+  if utility.is_file(modelfile) then
     return os.execute("ollama create " .. model .. " --file " .. modelfile:enquote())
   else
     return os.execute("ollama pull " .. model)
@@ -101,7 +101,7 @@ local function background(maximum)
     save_queue(queue)
 
     if selected then
-      local result = utility.capture("luajit " .. utility.path .. "llm.lua run " .. selected.model .. " " .. selected.input:enquote())
+      local result = utility.capture_safe("luajit " .. utility.path .. "llm.lua run " .. selected.model .. " " .. selected.input:enquote())
       local queue = get_queue()
       queue[id].status = "finished"
       queue[id].result = result

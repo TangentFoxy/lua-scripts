@@ -6,7 +6,7 @@ local utility = require "utility"
 local media_extensions = { "mp4", "png", "jpg", "jpeg", "gif", "webm", }
 
 os.execute("mkdir non-image")
-utility.ls(".")(function(file_name)
+utility.ls(".", function(file_name)
   local move_file = true
   local _, _, file_extension = utility.split_path_components(file_name)
   if file_extension then

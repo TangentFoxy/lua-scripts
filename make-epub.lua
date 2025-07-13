@@ -229,7 +229,7 @@ local function download_pages(config)
   os.execute("mkdir " .. config.base_file_name:enquote())
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    if not utility.file_exists(section_dir:sub(1, -2) .. ".md") then
+    if not utility.is_file(section_dir:sub(1, -2) .. ".md") then
       os.execute("mkdir " .. section_dir:sub(1, -2):enquote())
 
       local section_url = get_section_url(config, section)
@@ -237,7 +237,7 @@ local function download_pages(config)
       local current_domain = get_current_domain(section_url)
 
       for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-        if utility.file_exists(section_dir .. page .. ".html") then
+        if utility.is_file(section_dir .. page .. ".html") then
           break -- skip downloading pages we already have!
         end
 
@@ -274,7 +274,7 @@ local function download_pages(config)
           end
         end
 
-        utility.open(section_dir .. page .. ".html", "w")(function(page_file)
+        utility.open(section_dir .. page .. ".html", "w", function(page_file)
           page_file:write(text .. "\n")
         end)
 
@@ -288,7 +288,7 @@ local function check_page_counts(config, section, section_dir)
   -- if discover_page_counts was used and the script was interrupted, could be in a weird state
   if config.page_counts[section - (config.sections.start - 1)] == absurdly_high_number then
     local _pages = {}
-    utility.ls(section_dir)(function(item)
+    utility.ls(section_dir, function(item)
       local _, _number, file_extension = utility.split_path_components(item) -- file name will be a number
       if file_extension then
         _number = tonumber(_number:sub(1, -(#file_extension+2)))
@@ -307,7 +307,7 @@ local function convert_pages(config)
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    if not utility.file_exists(section_dir:sub(1, -2) .. ".md") then
+    if not utility.is_file(section_dir:sub(1, -2) .. ".md") then
       local current_domain = get_current_domain(get_section_url(config, section))
 
       check_page_counts(config, section, section_dir)
@@ -333,11 +333,11 @@ local function concatenate_pages(config)
 
   for section = config.sections.start, config.sections.finish do
     local section_dir = get_section_dir(config, section)
-    if not utility.file_exists(section_dir:sub(1, -2) .. ".md") then
-      utility.open(section_dir:sub(1, -2) .. ".md", "w")(function(section_file)
+    if not utility.is_file(section_dir:sub(1, -2) .. ".md") then
+      utility.open(section_dir:sub(1, -2) .. ".md", "w", function(section_file)
         check_page_counts(config, section, section_dir)
         for page = 1, config.page_counts[section - (config.sections.start - 1)] do
-          utility.open(section_dir .. page .. ".md", "r")(function(page_file)
+          utility.open(section_dir .. page .. ".md", "r", function(page_file)
             if config.sections.automatic_naming then
               local naming_patterns = {
                 "^Prologue$",
@@ -373,7 +373,7 @@ end
 local function write_markdown_file(config)
   print("\nWriting Markdown file...\n")
 
-  utility.open(config.base_file_name .. ".md", "w")(function(markdown_file)
+  utility.open(config.base_file_name .. ".md", "w", function(markdown_file)
     markdown_file:write(format_metadata(config))
     markdown_file:write(copyright_warning)
 
@@ -419,7 +419,7 @@ local function write_markdown_file(config)
       markdown_file:write("\n\n")
 
       local section_file_name = get_section_dir(config, section):sub(1, -2) .. ".md"
-      utility.open(section_file_name, "r")(function(section_file)
+      utility.open(section_file_name, "r", function(section_file)
         markdown_file:write(section_file:read("*all"))
       end)
     end
@@ -471,7 +471,7 @@ local function rm_all(config)
 end
 
 local function main(arguments)
-  local config = utility.open(arguments.config, "r")(function(config_file)
+  local config = utility.open(arguments.config, "r", function(config_file)
     return load_config(config_file:read("*all"))
   end)
 
@@ -527,7 +527,7 @@ local function main(arguments)
 end
 
 if options.config == "." then
-  utility.ls(".")(function(file_name)
+  utility.ls(".", function(file_name)
     if file_name:find(".json$") then
       options.config = file_name
       main(options)

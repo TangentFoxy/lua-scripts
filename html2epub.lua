@@ -8,7 +8,7 @@ local json = require "json"
 
 utility.required_program("pandoc")
 
-local options = utility.open(arg[1], "r")(function(file)
+local options = utility.open(arg[1], "r", function(file)
   return json.decode(file:read("*all"))
 end)
 
@@ -22,7 +22,7 @@ local function equal_array_lengths(...)
   return true
 end
 
-utility.open(options.index_file, "r")(function(file)
+utility.open(options.index_file, "r", function(file)
   local html_text = file:read("*all")
   local parser = htmlparser.parse(html_text, 100000)
 
@@ -62,11 +62,11 @@ utility.open(options.index_file, "r")(function(file)
     page.base_file_name = utility.make_safe_file_name(page.title)
     local html_file_path = ("Stories" .. utility.path_separator .. page.base_file_name .. ".html")
     local epub_file_path = ("All ePubs" .. utility.path_separator .. page.base_file_name .. ".epub")
-    utility.open(html_file_path, "w")(function(file)
+    utility.open(html_file_path, "w", function(file)
       file:write(output)
     end)
 
-    utility.open("metadata.yaml", "w")(function(file)
+    utility.open("metadata.yaml", "w", function(file)
       file:write("---\ntitle: \"" .. page.title .. "\"\nauthor:\n")
       for _, author in ipairs(options.authors) do
         file:write("- " .. author:enquote() .. "\n")

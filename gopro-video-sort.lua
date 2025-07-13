@@ -5,7 +5,7 @@ local utility = require "utility"
 
 local created = {}
 
-utility.ls(".")(function(file_name)
+utility.ls(".", function(file_name)
   if file_name:find("%.MP4") then
     local folder = tonumber(file_name:sub(9-3, 9-1)) -- sequence number
     if not created[folder] then

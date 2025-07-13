@@ -42,7 +42,7 @@ local function save()
     print("! WARNING: Exporting a config with no sections. !\n  " .. config.base_file_name:enquote())
   end
   local config_file_name = config.base_file_name .. ".json"
-  utility.open(config_file_name, "w")(function(file)
+  utility.open(config_file_name, "w", function(file)
     file:write(json.encode(config, { indent = true }) .. "\n")
   end)
 
@@ -69,7 +69,7 @@ local function anthology(file_name)
   config.section_titles = {}
   local unique_authors = {}
 
-  utility.open(file_name, "r")(function(file)
+  utility.open(file_name, "r", function(file)
     local download_url = file:read("*line")
 
     -- if not a URL, it's "the" title
@@ -199,9 +199,9 @@ end
 
 
 -- main
-if utility.file_exists(options.source) then
+if utility.is_file(options.source) then
   local is_html = false
-  utility.open(options.source, "r")(function(file)
+  utility.open(options.source, "r", function(file)
     local contents = file:read("*all")
     is_html = contents:find("<.-html>")
     if is_html then
