@@ -37,6 +37,13 @@ local url_patterns = {
 
 
 
+-- TODO move to utility
+local function list_reverse(tab)
+  for i = 1, math.floor(#tab/2) do
+    tab[i], tab[#tab-i+1] = tab[#tab-i+1], tab[i]
+  end
+end
+
 local function save()
   if #config.sections == 0 then
     print("! WARNING: Exporting a config with no sections. !\n  " .. config.base_file_name:enquote())
@@ -188,12 +195,19 @@ local function author(download_url, all_in_one)
         end
       end
       config.series_removed = true -- I just think it'll be useful to have this reminder
+      list_reverse(config.sections)
     end
   else
     config.series = nil
+    list_reverse(config.sections)
   end
 
-  save()
+  -- TODO check for prexisting file and update instead of replace?
+  if #config.sections > 0 then
+    save()
+  else
+    print("Collected Works not saved because it's empty.")
+  end
 end
 
 
