@@ -3,6 +3,11 @@
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
 local utility = require "utility"
 
+if arg[1] then
+  print("This command takes no arguments / has no options.")
+  return 1
+end
+
 local created = {}
 
 utility.ls(".", function(file_name)
