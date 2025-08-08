@@ -16,6 +16,7 @@ local parser = argparse()
 parser:argument("source", "Source (URL, or HTML file of author page, or text file of URLs)"):args(1)
 parser:argument("all_in_one", "For artist pages only, if ANY 2nd argument is passed, series will not be split into their own files."):args("?")
 parser:flag("--make-epub", "Run make-epub automatically."):overwrite(false)
+parser:flag("--no-reverse", "Do not reverse order in author's collected works."):overwrite(false)
 local options = parser:parse()
 
 
@@ -195,11 +196,15 @@ local function author(download_url, all_in_one)
         end
       end
       config.series_removed = true -- I just think it'll be useful to have this reminder
-      list_reverse(config.sections)
+      if not options.no_reverse then
+        list_reverse(config.sections)
+      end
     end
   else
     config.series = nil
-    list_reverse(config.sections)
+    if not options.no_reverse then
+      list_reverse(config.sections)
+    end
   end
 
   -- TODO check for prexisting file and update instead of replace?
