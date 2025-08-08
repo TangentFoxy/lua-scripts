@@ -258,7 +258,7 @@ local function download_pages(config)
 
         local raw_html
         if current_domain.name == "furaffinity.net" then
-          local fa_cookie_string = assert(utility.get_config().fa_cookie_string, "You are missing FurAffinity cookies in config. See README.")
+          local fa_cookie_string = assert(utility.get_config("skip_lock").fa_cookie_string, "You are missing FurAffinity cookies in config. See README.")
           raw_html = utility.curl_read(download_url, "--cookie " .. fa_cookie_string:enquote())
         else
           raw_html = utility.curl_read(download_url)
