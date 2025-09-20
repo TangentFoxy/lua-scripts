@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 math.randomseed(os.time())
 
-local version = "0.6"
+local version = "0.6.1"
 local user_agent = "-A \"pool2epub/" .. version .. "\""
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
@@ -71,16 +71,22 @@ for _, identifier in ipairs(pool.post_ids) do
       return
     end
 
+    if not post.file.url then
+      lines[#lines + 1] = "Post missing download URL: #" .. identifier .. " (MD5: " .. post.file.md5 .. ")\n"
+      os.execute("sleep 1")
+      return
+    end
+
     lines[#lines + 1] = "![](processed_images/" .. post.file.md5 .. ".jpg)"
     if not options.discard_description then
       lines[#lines + 1] = "\n" .. post.description
     end
 
     -- DEBUG
-    if not post.file.url then
-      utility.print_table(post)
-      os.exit(1)
-    end
+    -- if not post.file.url then
+    --   utility.print_table(post)
+    --   os.exit(1)
+    -- end
 
     os.execute("sleep 1")
     os.execute("curl " .. user_agent .. " -o raw_images/" .. post.file.md5 .. "." .. post.file.ext .. " " .. post.file.url)
