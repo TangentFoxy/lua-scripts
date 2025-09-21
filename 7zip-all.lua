@@ -3,6 +3,8 @@
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
 local utility = require "utility"
 
+utility.required_program("7zz")
+
 utility.ls()(function(file_name)
   -- print(file_name:sub(-3) == ".7z", utility.is_file(file_name .. ".7z")) -- DEBUG
   if file_name == "." or file_name == ".." then return end
@@ -13,5 +15,5 @@ utility.ls()(function(file_name)
   end
 
   -- print("7z a \"" .. file_name .. ".7z\" " .. file_name:enquote()) -- DEBUG
-  os.execute("7z a \"" .. file_name .. ".7z\" " .. file_name:enquote())
+  os.execute("7zz a \"" .. file_name .. ".7z\" " .. file_name:enquote())
 end)
