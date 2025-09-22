@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 math.randomseed(os.time())
 
-local version = "0.7"
+local version = "0.8"
 local user_agent = "-A \"pool2epub/" .. version .. "\""
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
@@ -18,6 +18,7 @@ local pool2epub_settings = utility.get_config("skip_lock").pool2epub
 local parser = argparse():description("Make an ebook of images from an e926 pool."):help_max_width(80)
 parser:argument("url", "Pool URL (can have .json or it can be missing)"):args(1)
 parser:flag("--discard-description", "Descriptions will not be included in output.")
+parser:flag("--save-json", "Save all JSON data obtained to all_posts.json")
 parser:argument("author", "Author of the work."):args("?")
 
 local options = parser:parse()
@@ -38,7 +39,6 @@ local function get_json(url)
   end
 
   local text = utility.curl_read(url, user_agent)
-  -- print(text) -- DEBUG
   return json.decode(text)
 end
 
@@ -60,9 +60,9 @@ local lines = {
   "",
 }
 
-local failed_images = {}
--- TODO save ALL image data so that checking for missing images can be done after image processing,
---        and warnings can be added there, and added to failed_images
+-- both indexed by MD5
+local all_posts = {}
+local failed_posts = {}
 
 
 
@@ -70,6 +70,7 @@ local failed_images = {}
 for _, identifier in ipairs(pool.post_ids) do
   local function act(identifier)
     local post = get_json(base_url .. "posts/" .. identifier .. ".json").post
+    all_posts[post.file.md5] = post
 
     lines[#lines + 1] = "![](processed_images/" .. post.file.md5 .. ".jpg)"
     if not options.discard_description then
@@ -78,23 +79,17 @@ for _, identifier in ipairs(pool.post_ids) do
 
     if post.flags.deleted then
       lines[#lines + 1] = "Deleted post: #" .. identifier .. " (MD5: " .. post.file.md5 .. ")\n"
-      table.insert(failed_images, post)
+      failed_posts[post.file.md5] = post
       os.execute("sleep 1")
       return
     end
 
     if not post.file.url then
       lines[#lines + 1] = "Post missing download URL: #" .. identifier .. " (MD5: " .. post.file.md5 .. ")\n"
-      table.insert(failed_images, post)
+      failed_posts[post.file.md5] = post
       os.execute("sleep 1")
       return
     end
-
-    -- DEBUG
-    -- if not post.file.url then
-    --   utility.print_table(post)
-    --   os.exit(1)
-    -- end
 
     os.execute("sleep 1")
     os.execute("curl " .. user_agent .. " -o raw_images/" .. post.file.md5 .. "." .. post.file.ext .. " " .. post.file.url)
@@ -104,9 +99,12 @@ for _, identifier in ipairs(pool.post_ids) do
   act(identifier)
 end
 
+
+
 print("\n Processing images. It is safe to start another instance of this script now. \n")
 
 -- process images
+local processed_posts = {} -- indexed by MD5
 utility.ls("raw_images")(function(file_name)
   local _, _, file_extension = utility.split_path_components(file_name)
   local base_name = file_name:sub(1, -#file_extension-2)
@@ -115,17 +113,34 @@ utility.ls("raw_images")(function(file_name)
     local export_file_name = "processed_images/" .. base_name .. ".jpg"
     if not utility.is_file(export_file_name) then
       os.execute("magick " .. ("raw_images" .. utility.path_separator .. file_name):enquote() .. " -quality 50% " .. export_file_name:enquote())
+      processed_posts[base_name] = true
     end
   end
 end)
 
+-- warn about missed images and make sure they are in failed_posts
+for md5, post in pairs(all_posts) do
+  if (not processed_posts[md5]) or (not failed_posts[md5]) then
+    failed_posts[md5] = post
+    print(md5 .. " failed to download, but should've succeeded.")
+  end
+end
+
 -- save data and convert
-if #failed_images > 0 then
-  utility.open("failed_images", "w", function(file)
-    file:write(json.encode(failed_images, { indent = true }))
+if options.save_json then
+  utility.open("all_posts.json", "w", function(file)
+    file:write(json.encode(all_posts, { indent = true }))
     file:write("\n")
   end)
-  print("\n Warning! Failed to obtain " .. #failed_images .. " images! \n")
+end
+
+if next(failed_posts) then
+  print("\n Warning! Failed to obtain images! \n")
+  utility.open("failed_posts.json", "w", function(file)
+    file:write(json.encode(failed_posts, { indent = true }))
+    file:write("\n")
+  end)
+  print("Post data for failed images is in failed_posts.json")
 end
 
 utility.open("text.md", "w", function(file)
