@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 math.randomseed(os.time())
 
-local version = "0.6.1"
+local version = "0.7"
 local user_agent = "-A \"pool2epub/" .. version .. "\""
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
@@ -60,26 +60,34 @@ local lines = {
   "",
 }
 
+local failed_images = {}
+-- TODO save ALL image data so that checking for missing images can be done after image processing,
+--        and warnings can be added there, and added to failed_images
+
+
+
 -- obtain images and metadata
 for _, identifier in ipairs(pool.post_ids) do
   local function act(identifier)
     local post = get_json(base_url .. "posts/" .. identifier .. ".json").post
 
+    lines[#lines + 1] = "![](processed_images/" .. post.file.md5 .. ".jpg)"
+    if not options.discard_description then
+      lines[#lines + 1] = "\n" .. post.description .. "\n"
+    end
+
     if post.flags.deleted then
       lines[#lines + 1] = "Deleted post: #" .. identifier .. " (MD5: " .. post.file.md5 .. ")\n"
+      table.insert(failed_images, post)
       os.execute("sleep 1")
       return
     end
 
     if not post.file.url then
       lines[#lines + 1] = "Post missing download URL: #" .. identifier .. " (MD5: " .. post.file.md5 .. ")\n"
+      table.insert(failed_images, post)
       os.execute("sleep 1")
       return
-    end
-
-    lines[#lines + 1] = "![](processed_images/" .. post.file.md5 .. ".jpg)"
-    if not options.discard_description then
-      lines[#lines + 1] = "\n" .. post.description
     end
 
     -- DEBUG
@@ -111,7 +119,15 @@ utility.ls("raw_images")(function(file_name)
   end
 end)
 
--- save md and convert
+-- save data and convert
+if #failed_images > 0 then
+  utility.open("failed_images", "w", function(file)
+    file:write(json.encode(failed_images, { indent = true }))
+    file:write("\n")
+  end)
+  print("\n Warning! Failed to obtain " .. #failed_images .. " images! \n")
+end
+
 utility.open("text.md", "w", function(file)
   file:write(table.concat(lines, "\n"))
   file:write("\n")
