@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 math.randomseed(os.time())
 
-local version = "0.11.1"
+local version = "0.11.2"
 local user_agent = "-A \"pool2epub/" .. version .. "\""
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
@@ -60,9 +60,9 @@ local function process_images()
 
     if file_extension == "jpg" or file_extension == "png" then
       local export_file_name = "processed_images/" .. base_name .. ".jpg"
+      processed_posts[base_name] = true -- it is processed whether or not we are handling it in this moment (this assumption may be dangerous)
       if not utility.is_file(export_file_name) then
         os.execute("magick " .. ("raw_images" .. utility.path_separator .. file_name):enquote() .. " -quality 50% " .. export_file_name:enquote())
-        processed_posts[base_name] = true
       end
     end
   end)
