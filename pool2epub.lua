@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 math.randomseed(os.time())
 
-local version = "0.11.2"
+local version = "0.11.3"
 local user_agent = "-A \"pool2epub/" .. version .. "\""
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
@@ -138,6 +138,7 @@ local function retry_images()
     save_failed_images(failed_posts)
   else
     export_epub()
+    os.execute("rm failed_posts.json")
   end
 end
 
