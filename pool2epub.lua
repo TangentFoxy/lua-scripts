@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 math.randomseed(os.time())
 
-local version = "0.11.3"
+local version = "0.11.5"
 local user_agent = "-A \"pool2epub/" .. version .. "\""
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
@@ -64,6 +64,8 @@ local function process_images()
       if not utility.is_file(export_file_name) then
         os.execute("magick " .. ("raw_images" .. utility.path_separator .. file_name):enquote() .. " -quality 50% " .. export_file_name:enquote())
       end
+    elseif file_extension == "gif" then
+      os.execute("cp raw_images" .. utility.path_separator .. file_name .. " processed_images" .. utility.path_separator .. file_name)
     end
   end)
 
@@ -171,7 +173,11 @@ local function main()
       local post = get_json(base_url .. "posts/" .. identifier .. ".json").post
       all_posts[post.file.md5] = post
 
-      lines[#lines + 1] = "![](processed_images/" .. post.file.md5 .. ".jpg)"
+      if post.file.ext == "gif" then
+        lines[#lines + 1] = "![](processed_images/" .. post.file.md5 .. ".gif)"
+      else
+        lines[#lines + 1] = "![](processed_images/" .. post.file.md5 .. ".jpg)"
+      end
       if not options.discard_description then
         lines[#lines + 1] = "\n" .. post.description .. "\n"
       end
