@@ -3,14 +3,14 @@ Personally convenient Lua scripts to add to my path.
 
 ## Installation
 1. Put this folder somewhere.
-2. Add that somewhere to your path. (On Windows, search for Environment Variables (it's "part of" Control Panel) and use the UI to add them to System variables.)
-3. (On Windows) Add `.LUA` to PATHEXT.
+2. Add that somewhere to your path. There is a shell script here for that purpose. (On Windows, search for Environment Variables (it's "part of" Control Panel) and use the UI to add them to System variables. Add `.LUA` to PATHEXT.)
 
 ## Config
 A `config.json` file in this directory can be used to hold private information and default settings.
 
-Right now the only setting is `fa_cookie_string` which needs to be set to a string `curl` can interpret as cookies for a logged-in FurAffinity user.
-Practically, this means something that looks like `a=<secret>; b=<secret>; sz=<secret>`.
+Settings per script are stored under a key based on that script's name, or for shared values, based on a library or program's name.
+- Right now the exception to this is `fa_cookie_string` which needs to be set to a string `curl` can interpret as cookies for a logged-in FurAffinity user. Practically, this means something that looks like `a=<secret>; b=<secret>; sz=<secret>`.
+  - This will be moved to a `curl` object.
 
 ## Scripts
 - [ ] This list needs to be updated, quite badly.
@@ -40,6 +40,8 @@ the library I'm using. (I may swap this out in the future.)
 
 ### make-epub.lua
 This script is only intended for personal use. Do not use it to infringe on copyright.
+
+This information is somewhat outdated. The script itself has more info.
 
 ```
 Usage:
