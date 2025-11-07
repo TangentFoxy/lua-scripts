@@ -1,69 +1,43 @@
 #!/usr/bin/env luajit
 
--- NOTE it is assumed all mods use ModuleManager and that it remains in place
+-- NOTE it is assumed all mods use ModuleManager; it remains in place in GameData
 
-local installed_location = "GameData"
-local disabled_location = "GameData.disabled"
+package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
+local utility = require "utility"
+local json = utility.require("dkjson")
 
-local mods = {
-  ["stock"] = { "Squad", },
-  ["DLC"] = { "SquadExpansion", },
+local file = io.open("Mods/mods.json")
+local text = file:read("*all")
+local data = json.decode(text)
 
-  ["Airplane Plus"] = { "AirplanePlus", "Firespitter", },
-  ["Atmosphere Autopilot"] = { "AtmosphereAutopilot", "KSPUpgradeScriptFix.dll", },
-  ["Environmental Visual Enhancements"] = { "BoulderCo", "EnvironmentalVisualEnhancements", },
-  ["Feline Utility Rover"] = { "KerbetrotterLtd", "KSPModFileLocalizer.dll", },
-  ["Kerbal Construction Time"] = {
-    "000_ClickThroughBlocker", "001_ToolbarControl", "KerbalConstructionTime",
-    "MagiCore", "SpaceTuxLibrary",
-  },
-  ["Kerbal Insurance Agency"] = { "Guard13007", "SlowCPU", },
-  ["KerbinSide"] = {
-    "CustomPreLaunchChecks", "KerbalKonstructs", "KerbinSideRemastered",
-  },
-  ["OhScrap!"] = { "OhScrap", "ScrapYard" },
-  ["Scatterer"] = { "Scatterer", "ScattererAtmosphereCache", }, -- 2nd item is generated on first run
-  ["Snacks"] = { "WildBlueIndustries" },
-  ["Stockalike Station Parts Expansion Redux"] = {
-    "B9PartSwitch", "NearFutureProps", "StationPartsExpansionRedux",
-    "StationPartsExpansionReduxIVAs",
-  },
-  ["Waterfall FX"] = { "StockWaterfallEffects", "Waterfall", },
-}
-local lists = {
-  ["default"] = {
-    -- "stock", "DLC",
-    "Atmosphere Autopilot", "Environmental Visual Enhancements",
-    "KerbalKrashSystem", "Scatterer", "Trajectories", "Waterfall FX",
-  },
-  ["daily career"] = {
-    -- "stock", "DLC",
-    "Atmosphere Autopilot", "Environmental Visual Enhancements",
-    "KerbalKrashSystem", "Scatterer", "Trajectories", "Waterfall FX",
+local mods = data.mods
+local lists = data.lists
 
-    "Airplane Plus", "CommunityTechTree", "Grounded",
-    "Kerbal Construction Time", "Kerbal Insurance Agency", "KSPSecondaryMotion",
-    "OhScrap!", "ScienceAlert", "Snacks",
 
-    -- "DMagicOrbitalScience", "ESLDBeacons", "Feline Utility Rover", "KerbinSide", "kOS",
-  },
-}
 
 local selected_list = table.concat(arg, " ")
+assert(#selected_list > 0, "Call ksp.lua with a named mod list.")
+
 local list = lists[selected_list]
-assert(list, "'" .. selected_list .. "' is not a valid list.")
+assert(list, "'" .. selected_list .. "' is not a defined list.")
+
+
 
 -- convert list selection into a hashtable of names for all needed files
 --  (this handles duplicated names from dependencies)
 local file_names_hashtable = {}
 for _, mod_name in ipairs(list) do
-  local mod_list = mods[mod_name]
-  if mod_list then
-    for _, mod_name in ipairs(mod_list) do
+  if type(mod_name) == "string" then
+    local mod_list = mods[mod_name]
+    if mod_list then
+      for _, mod_name in ipairs(mod_list) do
+        if type(mod_name) == "string" then
+          file_names_hashtable[mod_name] = true
+        end
+      end
+    else
       file_names_hashtable[mod_name] = true
     end
-  else
-    file_names_hashtable[mod_name] = true
   end
 end
 
@@ -82,6 +56,6 @@ local function move_list(list, a, b)
   end
 end
 
-move_list(file_names_list, disabled_location, installed_location)
+move_list(file_names_list, "Mods", "GameData")
 os.execute("./KSP.app/Contents/MacOS/KSP")
-move_list(file_names_list, installed_location, disabled_location)
+move_list(file_names_list, "GameData", "Mods")
