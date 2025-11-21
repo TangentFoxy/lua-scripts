@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 math.randomseed(os.time())
 
-local version = "0.11.5"
+local version = "0.11.6"
 local user_agent = "-A \"pool2epub/" .. version .. "\""
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
@@ -66,6 +66,7 @@ local function process_images()
       end
     elseif file_extension == "gif" then
       os.execute("cp raw_images" .. utility.path_separator .. file_name .. " processed_images" .. utility.path_separator .. file_name)
+      processed_posts[base_name] = true -- we mark it as true because this is used to detect download failures
     end
   end)
 
@@ -209,7 +210,7 @@ local function main()
 
   -- warn about missed images and make sure they are in failed_posts
   for md5, post in pairs(all_posts) do
-    if (not processed_posts[md5]) or (not failed_posts[md5]) then
+    if (not processed_posts[md5]) and (not failed_posts[md5]) then
       failed_posts[md5] = post
       print(md5 .. " failed to download, but should've succeeded.")
     end
