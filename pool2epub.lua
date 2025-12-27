@@ -15,7 +15,7 @@ utility.required_program("pandoc")
 -- set pool2epub.auth_query_string to "?login=USERNAME&api_key=APIKEY" to access account-restricted images
 local pool2epub_settings = utility.get_config("skip_lock").pool2epub
 
-local parser = argparse():description("Make an ebook of images from an e926 pool."):help_max_width(80)
+local parser = argparse():description("Make an ebook of images from an e621 pool."):help_max_width(80)
 parser:argument("url", "Pool URL (can have .json or it can be missing)"):args("?")
 parser:flag("--discard-description", "Descriptions will not be included in output.")
 parser:flag("--save-json", "Save all JSON data obtained to all_posts.json")
