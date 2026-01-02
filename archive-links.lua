@@ -19,6 +19,7 @@ local blacklist = {   -- these are URLs which are themselves archives
   "://web%.archive%.org/web/",
   "://archive%.is/",
   "://preservetube%.com/watch%?v%=",
+  "://ghostarchive%.org/archive/",
 }
 
 local concurrency, iteration = 4, 0   -- used to slow rate of opening links
