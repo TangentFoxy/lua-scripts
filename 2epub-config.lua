@@ -36,6 +36,19 @@ local url_patterns = {
   single = "literotica%.com/s/",
 }
 
+local html_selectors = {
+  author_page_author_name = "._header_title_1rw38_66",
+  author_page_item = "._item_title_lx5yf_226",
+
+  story_page_author_name = "._author__title_2s0v6_48",
+  story_page_title = "._title_2d1pc_26",
+
+  series_page_author_name = ".y_eS > .y_eU",
+  series_page_title = ".headline",
+  series_page_item_list = ".series__works > .br_ri",
+  series_page_item_link = ".br_rj",
+}
+
 
 
 -- TODO move to utility
@@ -60,7 +73,7 @@ local function save()
 end
 
 local function get_parser_from_url(download_url)
-  local raw_html = utility.curl_read(download_url)
+  local raw_html = utility.curl_read(download_url, "-A " .. ("Mozilla/5.0"):enquote())
   return htmlparser.parse(raw_html, 100000)
 end
 
@@ -90,13 +103,13 @@ local function anthology(file_name)
       if #download_url > 0 then
         local parser = get_parser_from_url(download_url)
 
-        local author = parser:select(".y_eS > .y_eU")[1]:getcontent()
+        local author = parser:select(html_selectors.story_page_author_name)[1]:getcontent()
         if not unique_authors[author] then
           table.insert(config.authors, author)
           unique_authors[author] = true
         end
         table.insert(config.sections, download_url)
-        local section_title = parser:select(".headline")[1]:getcontent():gsub("&#x27;", "'")
+        local section_title = parser:select(html_selectors.story_page_title)[1]:getcontent():gsub("&#x27;", "'")
         table.insert(config.section_titles, section_title)
 
         os.execute("sleep " .. tostring(math.random(5)))
@@ -118,12 +131,12 @@ local function series(download_url)
 
   local parser = get_parser_from_url(download_url)
 
-  config.authors[1] = parser:select(".y_eS > .y_eU")[1]:getcontent()
-  config.title = parser:select(".headline")[1]:getcontent():gsub("&#x27;", "'"):gsub("&amp;", "&"):gsub("’", "'")
+  config.authors[1] = parser:select(html_selectors.series_page_author_name)[1]:getcontent()
+  config.title = parser:select(html_selectors.series_page_title)[1]:getcontent():gsub("&#x27;", "'"):gsub("&amp;", "&"):gsub("’", "'")
 
-  local sections = parser:select(".series__works > .br_ri")
+  local sections = parser:select(html_selectors.series_page_item_list)
   for index, value in ipairs(sections) do
-    config.sections[index] = value:select(".br_rj")[1].attributes.href
+    config.sections[index] = value:select(html_selectors.series_page_item_link)[1].attributes.href
   end
 
   config.base_file_name = utility.make_safe_file_name(config.title:gsub("&", "and") .. " by " .. config.authors[1])
@@ -135,8 +148,8 @@ local function single(download_url)
 
   local parser = get_parser_from_url(download_url)
 
-  config.authors[1] = parser:select(".y_eS > .y_eU")[1]:getcontent()
-  config.title = parser:select(".headline")[1]:getcontent():gsub("&#x27;", "'"):gsub("&amp;", "&"):gsub("’", "'")
+  config.authors[1] = parser:select(html_selectors.story_page_author_name)[1]:getcontent()
+  config.title = parser:select(html_selectors.story_page_title)[1]:getcontent():gsub("&#x27;", "'"):gsub("&amp;", "&"):gsub("’", "'")
 
   config.sections[1] = download_url
 
@@ -155,11 +168,11 @@ local function author(download_url, all_in_one)
     parser = htmlparser.parse(download_url, 100000)
   end
 
-  config.authors[1] = parser:select("._header_title_1rw38_66")[1]:getcontent() -- commit 1127e75 should have been this
+  config.authors[1] = parser:select(html_selectors.author_page_author_name)[1]:getcontent() -- commit 1127e75 should have been this
   -- config.title = parser:select(".headline")[1]:getcontent() -- NOTE doesn't work, not sure why
   config.title = "Collected Works of " .. config.authors[1]
 
-  local sections = parser:select("._item_title_zx1nh_223")
+  local sections = parser:select(html_selectors.author_page_item)
   for _, value in ipairs(sections) do
     local section_url = value.attributes.href
     if section_url:find(url_patterns.series) then -- series saved in extra list
