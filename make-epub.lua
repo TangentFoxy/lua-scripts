@@ -1,5 +1,7 @@
 #!/usr/bin/env luajit
 
+local version = "0.2.0"
+
 local helptext = [[
 Actions:
   download:  All pages will be downloaded to their own HTML files.
@@ -38,7 +40,7 @@ local domain_customizations = {
   ["www%.literotica%.com/s/"] = {
     name = "literotica.com",
     content_selector = ".article > div > div",
-    title_selector = ".headline",
+    title_selector = "._title_2d1pc_26",
     conversion_method = "standard",
   },
   ["spanish%.literotica%.com/s/"] = { -- this doesn't seem to work, and I have no idea why not
@@ -173,7 +175,7 @@ local function format_metadata(config)
     "author: [" .. stringify_list(config.authors) .. "]",
     "keywords: [" .. keywords_string .. "]",
     "tags: [" .. keywords_string .. "]",
-    "publisher: " .. ("make-epub.lua"):enquote(),
+    "publisher: " .. ("make-epub.lua v" .. version):enquote(),
     "---",
     "",
   }
@@ -249,7 +251,7 @@ local function download_pages(config)
         end
 
         if config.discover_page_counts then
-          local raw_html = utility.curl_read(download_url, "-I")
+          local raw_html = utility.curl_read(download_url, "-I -A " .. ("Mozilla/5.0"):enquote())
           if raw_html:find("404 Not Found") or raw_html:find("HTTP/2 404") then
             config.page_counts[section - (config.sections.start - 1)] = page - 1
             break
@@ -261,7 +263,7 @@ local function download_pages(config)
           local fa_cookie_string = assert(utility.get_config("skip_lock").fa_cookie_string, "You are missing FurAffinity cookies in config. See README.")
           raw_html = utility.curl_read(download_url, "--cookie " .. fa_cookie_string:enquote())
         else
-          raw_html = utility.curl_read(download_url)
+          raw_html = utility.curl_read(download_url, "-A " .. ("Mozilla/5.0"):enquote())
         end
 
         local parser = htmlparser.parse(raw_html, 100000)
