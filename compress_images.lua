@@ -2,6 +2,7 @@
 
 package.path = (arg[0]:match("@?(.*/)") or arg[0]:match("@?(.*\\)")) .. "lib" .. package.config:sub(1, 1) .. "?.lua;" .. package.path
 local utility = require "utility"
+utility.required_program("magick")
 
 local image_extensions = { "png", "jpg", "jpeg", "gif", }
 
