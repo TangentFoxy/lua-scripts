@@ -19,6 +19,6 @@ utility.ls(".", function(file_name)
     end
   end
   if process_file then
-    os.execute("magick " file_name:enquote() .. " -quality 75 " .. ("compressed-images/" .. bare_file_name:sub(1, -(#file_extension + 2)) .. ".jpg"):enquote())
+    os.execute("magick " .. file_name:enquote() .. " -quality 75 " .. ("compressed-images/" .. bare_file_name:sub(1, -(#file_extension + 2)) .. ".jpg"):enquote())
   end
 end)
