@@ -19,6 +19,10 @@ utility.ls(".", function(file_name)
     end
   end
   if process_file then
-    os.execute("magick " .. file_name:enquote() .. " -quality 75 " .. ("compressed-images/" .. bare_file_name:sub(1, -(#file_extension + 2)) .. ".jpg"):enquote())
+    local command = "magick " .. file_name:enquote()
+    if arg and arg[1] and arg[1] == "--trim" then
+      command = command .. " -fuzz 5% -trim -shave 3x3"
+    end
+    os.execute(command .. " -quality 75 " .. ("compressed-images/" .. bare_file_name:sub(1, -(#file_extension + 2)) .. ".jpg"):enquote())
   end
 end)
