@@ -1,3 +1,8 @@
+-- Reminder that this treats all line breaks as soft breaks.
+-- Text will reflow dynamically after this parses it.
+--   It will NOT retain any formatting created solely by
+--   linebreaks.
+
 -- A sample custom reader that just parses text into blankline-separated
 -- paragraphs with space-separated words.
 
